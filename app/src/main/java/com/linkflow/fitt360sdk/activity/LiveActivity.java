@@ -1,5 +1,6 @@
 package com.linkflow.fitt360sdk.activity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
@@ -7,10 +8,13 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Chronometer;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
@@ -18,15 +22,29 @@ import com.blankj.utilcode.util.BarUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.dialog.RTMPStreamerDialog;
+import com.linkflow.fitt360sdk.helper.TimeUtils;
 import com.linkflow.fitt360sdk.helper.TimerHelper;
 import com.linkflow.fitt360sdk.service.RTMPStreamService;
 import com.wang.avi.AVLoadingIndicatorView;
 
 import java.text.DecimalFormat;
+import java.util.Timer;
 
+import app.library.linkflow.manager.StoredDataManager;
+import app.library.linkflow.manager.item.BaseExtendSetItem;
+import app.library.linkflow.manager.item.BaseSetItem;
+import app.library.linkflow.manager.item.RecordSetItem;
+import app.library.linkflow.manager.item.StatusItem;
+import app.library.linkflow.manager.item.VolumeItem;
+import app.library.linkflow.manager.model.InfoModel;
+import app.library.linkflow.manager.neckband.ConnectStateManage;
+import app.library.linkflow.manager.neckband.NeckbandManager;
+import app.library.linkflow.manager.neckband.SetManage;
+import app.library.linkflow.manager.neckband.SettingListener;
 import app.library.linkflow.rtmp.RTSPToRTMPConverter;
 
-public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Listener, TimerHelper.Listener {
+public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Listener,
+        SetManage.Listener, SettingListener {
     private TextView mTvPush;
     private RTMPStreamerDialog mRTMPStreamerDialog;
     private DecimalFormat mDecimalFormat = new DecimalFormat("0.#");
@@ -34,13 +52,14 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     private AVLoadingIndicatorView mAviLoading;
     private TextView mTvBack;
     private TextView mLiveFpsView;
-    private Chronometer mTvLiveTime;
+    //    private Chronometer mTvLiveTime;
     private Spinner mSpResolution;
     private Spinner mSpUpload;
     private Spinner mSpFps;
     private ImageView mImgMainBtn;
     private ImageView mImgRedDot;
     private TextView mTvMine;
+    private TextView mTvTime;
 
 
     private boolean isPushStream = false;
@@ -53,7 +72,22 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     private RTSPToRTMPConverter mConverter;
 
     private RTMPStreamService mService;
-    private TimerHelper mTimerHelper;
+
+
+    private int mVideoWidth = 3840;
+    private int mVideoHeight = 1920;
+    private int mBitRate = 30;
+    private int mFps = 30;
+
+    protected SetManage mSetManage;
+
+    private boolean listenerEnable = true;
+    private TimeUtils mTimeUtils;
+    private ProgressBar mProgressBarPower;
+    private TextView mTvPower;
+
+    private boolean isTimer = false;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -67,14 +101,65 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
         mRSToRMConverter = RTSPToRTMPConverter.getInstance();
         mConverter = RTSPToRTMPConverter.getInstance().init(getMainLooper(), this);
-        mTimerHelper = TimerHelper.getInstance().init(getMainLooper(), this);
+        mTimeUtils = new TimeUtils(callBack, 1000);
+
+        mSetManage = mNeckbandManager.getSetManage();
+        mSetManage.setListener(this);
+        mSetManage.getRecordSetModel().setListener(this);
+
+
         initViewId();
 
         initListener();
-        mTimerHelper.start();
+
+        getPower();
         Log.e("TAGTAG", "Status" + mConverter.getSentByteAmount());
 
     }
+
+    private void getPower() {
+
+    }
+
+    @Override
+    public void onConnectState(ConnectStateManage.STATE state) {
+        super.onConnectState(state);
+        if (state == ConnectStateManage.STATE.STATE_DONE) {
+            mNeckbandManager.getRecordModel(this).getRecordState(mNeckbandManager.getAccessToken());
+            mBatteryAndStorageChecker.setListener(new BatteryAndStorageCheckerListener() {
+                @Override
+                public void takeBatteryAndStorageLevel() {
+                    mNeckbandManager.getInfoManage().getInfoModel().getStatus(mNeckbandManager.getAccessToken(), new InfoModel.StatusListener() {
+                        @SuppressLint("SetTextI18n")
+                        @Override
+                        public void completedGetStatus(boolean success, StatusItem statusItem, VolumeItem volumeItem) {
+                            if (success) {
+
+                                mBeforeBatteryLevel = statusItem.mBatteryLevel;
+                                Log.e("power","power:"+mBeforeBatteryLevel);
+
+                                mProgressBarPower.setProgress(mBeforeBatteryLevel);
+                                mTvPower.setText(mBeforeBatteryLevel+"%");
+//                                Toast.makeText(LiveActivity.this, "仅剩" + mBeforeBatteryLevel + "% 电量", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                }
+            });
+        } else if (state == ConnectStateManage.STATE.STATE_NONE) {
+            mNeckbandManager.setRecordState(false);
+        }
+    }
+
+    private TimeUtils.UpdateUiCallBack callBack = new TimeUtils.UpdateUiCallBack() {
+        @Override
+        public void updateUI(String text) {
+//            updateText(text);
+            mTvTime.setText(text);
+            Log.e("TAGTAG", "Timeformat" + text);
+            mLiveFpsView.setText(mDecimalFormat.format((mConverter.getSentByteAmount() / 1000000f) * 8));
+        }
+    };
 
 
     @Override
@@ -93,7 +178,10 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mTimerHelper.stop();
+
+        if (isTimer){
+            mTimeUtils.stop();
+        }
 
         if (mRSToRMConverter != null) {
             if (mRSToRMConverter.isRTMPWorking()) {
@@ -115,23 +203,109 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
             mImgRedDot.setBackgroundResource(R.drawable.shape_accent_white_circle);
         } else {
             mImgMainBtn.setEnabled(false);
+            mSpFps.setEnabled(false);
+            mSpResolution.setEnabled(false);
+            mSpUpload.setEnabled(false);
             mImgMainBtn.setBackgroundResource(R.drawable.shape_bg_gray_circle);
             mImgRedDot.setBackgroundResource(R.drawable.shape_accent_white_circle);
         }
 
+        mSpResolution.setSelection(0, true); // 禁止默认自动调用一次
+        mSpUpload.setSelection(0, true); // 禁止默认自动调用一次
+        mSpFps.setSelection(0, true); // 禁止默认自动调用一次
+
+        mSpResolution.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String[] resolution = getResources().getStringArray(R.array.resolution);
+                String resolu = resolution[position];
+                String[] xes = resolu.split("x");
+                String x = xes[0];
+                String s = xes[1];
+                mVideoWidth = Integer.parseInt(x);
+                mVideoHeight = Integer.parseInt(s);
+
+//                String[] resolution1 = item.mTitle.split("x");
+                mSetManage.getRecordSetItem().setResolution(mVideoWidth, mVideoHeight);
+                mSetManage.getRecordSetModel().setBaseSettings(mNeckbandManager.getAccessToken(), true, mSetManage.getRecordSetItem());
+
+                Log.e("TAGGA", "H" + mVideoWidth + "X" + mVideoHeight);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+
+        mSpUpload.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view,
+                                       int pos, long id) {
+                String[] upload = getResources().getStringArray(R.array.upload);
+                String upl = upload[pos];
+                String[] xes = upl.split("M");
+                String x = xes[0];
+                mBitRate = Integer.parseInt(x);
+
+                mSetManage.getRecordSetModel().setBaseSettings(mNeckbandManager.getAccessToken(), true, mSetManage.getRecordSetItem());
+                mSetManage.setBitrate(mNeckbandManager.getAccessToken(), mBitRate);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Another interface callback
+                ToastUtils.showShort("ASSDD");
+            }
+        });
+
+
+        mSpFps.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view,
+                                       int pos, long id) {
+                String[] fps = getResources().getStringArray(R.array.fps);
+                String fps1 = fps[pos];
+                String[] xes = fps1.split("F");
+                String x = xes[0];
+                mFps = Integer.parseInt(x);
+
+                mSetManage.getRecordSetModel().setBaseSettings(mNeckbandManager.getAccessToken(), true, mSetManage.getRecordSetItem());
+                mSetManage.getTimeLapseModel().setRate(mNeckbandManager.getAccessToken(), mFps);
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Another interface callback
+                ToastUtils.showShort("ASSDD");
+            }
+        });
+
 
     }
 
+    @SuppressLint("SetTextI18n")
     private void initViewId() {
         mAviLoading = findViewById(R.id.avi_loading);
         mTvBack = findViewById(R.id.tv_back);
         mLiveFpsView = findViewById(R.id.live_fps_view);
-        mTvLiveTime = findViewById(R.id.tv_live_time);
+//        mTvLiveTime = findViewById(R.id.tv_live_time);
         mSpResolution = findViewById(R.id.sp_resolution);
         mSpUpload = findViewById(R.id.sp_upload);
         mSpFps = findViewById(R.id.sp_fps);
         mImgMainBtn = findViewById(R.id.img_main_btn);
         mImgRedDot = findViewById(R.id.img_red_dot);
+
+        mTvTime = findViewById(R.id.tv_time);
+
+        mProgressBarPower = findViewById(R.id.progressBar_power);
+        mTvPower = findViewById(R.id.tv_power);
+
+        mProgressBarPower.setMax(100);
+        mProgressBarPower.setProgress(100);
+        mTvPower.setText(100+"%");
 
 
 //        mTvMine = findViewById(R.id.tv_mine);
@@ -143,6 +317,11 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     }
 
     private void startStream() {
+        listenerEnable = false;
+        mTimeUtils.start();
+        isTimer = true;
+
+
         mNeckbandManager.getNotifyManage().getNotifyModel().agreementTemperLimit(mNeckbandManager.getAccessToken(), true, this);
         Intent intent = new Intent(LiveActivity.this, RTMPStreamService.class);
         intent.setAction(RTMPStreamService.ACTION_START_RTMP_STREAM);
@@ -157,14 +336,14 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
             startService(intent);
         }
 
-        if (mRecordTime != 0) {
-            mTvLiveTime.setBase(mTvLiveTime.getBase() + (SystemClock.elapsedRealtime() - mRecordTime));
-        } else {
-            mTvLiveTime.setBase(SystemClock.elapsedRealtime());
-            int hour = (int) ((SystemClock.elapsedRealtime() - mTvLiveTime.getBase()) / 1000 / 60);
-            mTvLiveTime.setFormat("0" + String.valueOf(hour) + ":%s");
-        }
-        mTvLiveTime.start();
+//        if (mRecordTime != 0) {
+//            mTvLiveTime.setBase(mTvLiveTime.getBase() + (SystemClock.elapsedRealtime() - mRecordTime));
+//        } else {
+//            mTvLiveTime.setBase(SystemClock.elapsedRealtime());
+//            int hour = (int) ((SystemClock.elapsedRealtime() - mTvLiveTime.getBase()) / 1000 / 60);
+//            mTvLiveTime.setFormat("0" + String.valueOf(hour) + ":%s");
+//        }
+//        mTvLiveTime.start();
 
         Log.e("TAGTAG", "Status" + mConverter.getSentByteAmount());
 
@@ -172,6 +351,9 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     }
 
     private void stopStream() {
+
+        mTimeUtils.stop();
+
         Intent intent = new Intent(LiveActivity.this, RTMPStreamService.class);
         intent.setAction(RTMPStreamService.ACTION_CANCEL_RTMP_STREAM);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -180,8 +362,9 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
             startService(intent);
         }
         mRSToRMConverter.exit();
-        mTvLiveTime.stop();
+//        mTvLiveTime.stop();
         mRecordTime = SystemClock.elapsedRealtime();
+
     }
 
     private void changeLiveEnable(boolean isPushStream) {
@@ -189,17 +372,21 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
             // 推流中
             mImgMainBtn.setBackgroundResource(R.drawable.shape_bg_white_circle);
             mImgRedDot.setBackgroundResource(R.drawable.shape_center_red_circle);
-            mTvBack.setEnabled(false);
+//            mTvBack.setEnabled(false);
             mSpFps.setEnabled(false);
             mSpResolution.setEnabled(false);
             mSpUpload.setEnabled(false);
 
+            listenerEnable = false;
         } else {
             // 停止了推流
-            mTvBack.setEnabled(true);
+            listenerEnable = true;
+
+//            mTvBack.setEnabled(true);
             mSpFps.setEnabled(true);
             mSpResolution.setEnabled(true);
             mSpUpload.setEnabled(true);
+
             mImgMainBtn.setBackgroundResource(R.drawable.shape_circle_gradient);
             mImgRedDot.setBackgroundResource(R.drawable.shape_accent_white_circle);
         }
@@ -228,7 +415,11 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                 break;
             }
             case R.id.tv_back: {
-                finish();
+                if (listenerEnable) {
+                    finish();
+                } else {
+                    ToastUtils.showShort(R.string.str_stop_live);
+                }
                 break;
             }
         }
@@ -258,10 +449,28 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
     }
 
+
     @Override
-    public void updateTime(String time) {
-//        Log.e("TAGTAG", "Timeformat" + mConverter.getSentByteAmount());
-        //
-        mLiveFpsView.setText(mDecimalFormat.format((mConverter.getSentByteAmount() / 1000000f) * 8));
+    public void completedCallSetApi(boolean success, boolean isSet) {
+        if (isSet) {
+            Toast.makeText(this, success ? R.string.applied : R.string.applied_fail, Toast.LENGTH_SHORT).show();
+        }
     }
+
+    @Override
+    public void completedSetBaseSetting(boolean success, BaseSetItem item) { // 默认设置
+        if (success && item instanceof RecordSetItem) {
+            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_RECORD_WIDTH, mVideoWidth);
+            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_RECORD_HEIGHT, mVideoHeight);
+            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_BITRATE, ((RecordSetItem) item).mBitrate);
+            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_FPS, ((RecordSetItem) item).mFPS);
+        }
+    }
+
+    @Override
+    public void completedSetExtendSetting(boolean b, BaseExtendSetItem baseExtendSetItem) {
+
+    }
+
+
 }

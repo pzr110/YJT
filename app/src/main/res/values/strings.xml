@@ -195,8 +195,8 @@
     <string name="bt_state_disabled">Please turn on Bluetooth.</string>
 
     <string name="support_not_yet">This function will be apply to next version</string>
-    <string name="applied">Applied</string>
-    <string name="applied_fail">Failed apply</string>
+    <string name="applied">修改成功</string>
+    <string name="applied_fail">修改失败</string>
 
     <string name="percent">%d%%</string>
     <string name="date">%d %d %d</string>
@@ -288,4 +288,5 @@
 
     <string name="samsung_vr_connect_msg">Do you want watch this content with SAMSUNG VR app?</string>
     <string name="reconnecting_cnt">Reconnecting %d ...</string>
+    <string name="str_stop_live">请先关闭直播</string>
 </resources>

@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import java.text.DecimalFormat;
 
 public class TimerHelper {
-    private static final int MSG_WRITE_TIME = 10, MSG_START_TIMER = 11;
+    private static final int MSG_WRITE_TIME = 10, MSG_START_TIMER = 11, MSG_STOP_TIMER = 12;
     private static TimerHelper mInstance;
     private TimerThread mTimerThread;
 
@@ -54,10 +54,11 @@ public class TimerHelper {
 
     public void destroy() {
         mTimerThread.doStop();
-        mTimerThread.quit();
+        mTimerThread.getLooper().quit();
+
     }
 
-    private class TimerThread extends HandlerThread {
+    private static class TimerThread extends HandlerThread {
         private DecimalFormat mFormat = new DecimalFormat("00");
 
         private Handler mMainHandler, mHandler;

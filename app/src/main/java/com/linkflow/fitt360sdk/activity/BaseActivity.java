@@ -55,7 +55,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         mHeaderLayout = findViewById(R.id.base_header);
         mBodyLayout = findViewById(R.id.base_body);
         mShadowLayout = findViewById(R.id.base_shadow);
-        mViewGroup = (ViewGroup) ((ViewGroup)findViewById(android.R.id.content)).getChildAt(0);
+        mViewGroup = (ViewGroup) ((ViewGroup) findViewById(android.R.id.content)).getChildAt(0);
 
         if (!mBaseHeaderDisable) {
             setHeaderView(R.layout.header_base);
@@ -158,7 +158,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
                             if (success) {
                                 if (mBeforeBatteryLevel != statusItem.mBatteryLevel && statusItem.mBatteryLevel <= 30) {
                                     mBeforeBatteryLevel = statusItem.mBatteryLevel;
-                                    Toast.makeText(BaseActivity.this, mBeforeBatteryLevel + "% Battery low", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(BaseActivity.this, "仅剩" + mBeforeBatteryLevel + "% 电量", Toast.LENGTH_SHORT).show();
                                 }
                             }
                         }
@@ -318,7 +318,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         @Override
         protected Void doInBackground(Void... voids) {
             int cnt = 3;
-            while(!mStop) {
+            while (!mStop) {
                 mIsWorking = true;
                 if (mListener != null) {
                     mListener.takeBatteryAndStorageLevel();

@@ -64,7 +64,7 @@
                             android:src="@mipmap/ic_ppower" />
 
                         <ProgressBar
-                            android:id="@+id/progressBar"
+                            android:id="@+id/progressBar_power"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:layout_width="145dp"
                             android:layout_height="10dp"
@@ -78,6 +78,7 @@
                             android:visibility="visible" />
 
                         <TextView
+                            android:id="@+id/tv_power"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
@@ -222,7 +223,7 @@
                             android:id="@+id/live_fps_view"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="3.5"
+                            android:text="0.0"
                             android:textColor="@color/color_6BCAFF"
                             android:textSize="86sp" />
 
@@ -256,13 +257,22 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
-                        <Chronometer
-                            android:id="@+id/tv_live_time"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:format="00:00:00"
+<!--                        <Chronometer-->
+<!--                            android:id="@+id/tv_live_time"-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:format="00:00:00"-->
+<!--                            android:visibility="gone"-->
+<!--                            android:textColor="@color/color_5B5DFF"-->
+<!--                            android:textSize="50sp" />-->
+
+                        <TextView
+                            android:id="@+id/tv_time"
+                            android:textSize="86sp"
+                            android:text="00:00:00"
                             android:textColor="@color/color_5B5DFF"
-                            android:textSize="86sp" />
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
 
                         <!--                    <TextView-->
                         <!--                        android:layout_width="wrap_content"-->
