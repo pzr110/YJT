@@ -261,6 +261,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     @Override
     public void updateTime(String time) {
 //        Log.e("TAGTAG", "Timeformat" + mConverter.getSentByteAmount());
+        //
         mLiveFpsView.setText(mDecimalFormat.format((mConverter.getSentByteAmount() / 1000000f) * 8));
     }
 }
