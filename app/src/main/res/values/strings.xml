@@ -289,4 +289,6 @@
     <string name="samsung_vr_connect_msg">Do you want watch this content with SAMSUNG VR app?</string>
     <string name="reconnecting_cnt">Reconnecting %d ...</string>
     <string name="str_stop_live">请先关闭直播</string>
+    <string name="str_connect_tips">连接失败请重试</string>
+    <string name="str_user_help">使用帮助？</string>
 </resources>

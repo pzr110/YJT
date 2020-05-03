@@ -1,6 +1,8 @@
 package com.linkflow.fitt360sdk.activity;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,8 +15,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.format.DateFormat;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -28,6 +34,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.blankj.utilcode.util.BarUtils;
+import com.blankj.utilcode.util.ScreenUtils;
+import com.blankj.utilcode.util.ToastUtils;
 import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.adapter.BTDeviceRecyclerAdapter;
 import com.linkflow.fitt360sdk.adapter.MainRecyclerAdapter;
@@ -35,6 +43,9 @@ import com.linkflow.fitt360sdk.dialog.RTMPStreamerDialog;
 import com.linkflow.fitt360sdk.item.BTItem;
 import com.linkflow.fitt360sdk.service.RTMPStreamService;
 import com.wang.avi.AVLoadingIndicatorView;
+
+import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
 
 import app.library.linkflow.ConnectManager;
 import app.library.linkflow.connect.BTConnectHelper;
@@ -111,6 +122,14 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             }
         }
     };
+    private AlertDialog mAutoConnectDialog;
+    private TextView mTextView;
+    private View mDialogView;
+    private TextView mTvDialogTips;
+
+    private String dialogStr = "连接蓝牙中";
+
+    private Handler hd = new MyHandler();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -187,10 +206,77 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
         mAdapterConnect.addItems(mBTConnectHelper.getBondedBTList());
 
+        ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList();
+        for (int i = 0; i < bondedBTList.size(); i++) {
 
+            if (mBTConnectHelper.isBondedDevice(bondedBTList.get(i))) {
+                Log.e("TAGOld", "发现旧设备");
+//                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
+                mConnector.start(null, bondedBTList.get(i));
+                showAutoConnectDialog(bondedBTList.get(i).getName());
+                break;
+            }
+        }
         ///////////////////////////////////////////
 
     }
+
+    private static final int UPDATE_TEXT = 1;
+
+    @SuppressLint("SetTextI18n")
+    private void showAutoConnectDialog(String name) {
+        mDialogView = LayoutInflater.from(this).inflate(R.layout.dialog_auto_connect, null, false);
+        mAutoConnectDialog = new AlertDialog.Builder(this).setView(mDialogView).create();
+        Window window = mAutoConnectDialog.getWindow();
+        mAutoConnectDialog.setCancelable(true);
+
+        AVLoadingIndicatorView avi = mDialogView.findViewById(R.id.avi_loading);
+        mTextView = (TextView) mDialogView.findViewById(R.id.tv_tips);
+//        mTextView.setText(name + "自动重连中");
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Message message = new Message();
+                message.what = 1;
+                hd.sendMessage(message); // 发送消息
+            }
+        }).start();
+
+        mAutoConnectDialog.show();
+
+//        mConnectDialog.getWindow().setLayout((ScreenUtils.getScreenWidth() / 3), LinearLayout.LayoutParams.WRAP_CONTENT);
+    }
+
+    // 定义一个内部类继承自Handler，并且覆盖handleMessage方法用于处理子线程传过来的消息
+    class MyHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case 1: // 接受到消息之后，对UI控件进行修改
+                    mTextView.setText("开始连接！");
+                    break;
+                case 2: {
+                    mTextView.setText("连接成功！");
+                    if (mAutoConnectDialog.isShowing()) {
+                        mAutoConnectDialog.dismiss();
+                    }
+                    break;
+                }
+                case 3: {
+                    mTextView.setText("连接失败！请重试");
+                    if (mAutoConnectDialog.isShowing()) {
+                        mAutoConnectDialog.dismiss();
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
 
     private void initViewId() {
         mRelLive = findViewById(R.id.rel_live);
@@ -217,6 +303,16 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
             }
         }
+
+        Log.e("ResFITT", "ReDevice:" + mSelectedBTDevice);
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.e("ResFITT", "StartDevice:" + mSelectedBTDevice);
+
     }
 
     @Override
@@ -268,6 +364,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             mSelectedBTDevice = mAdapterConnect.getItem(position).mDevice;
             if (mBTConnectHelper.isBondedDevice(mSelectedBTDevice)) {
                 mConnector.start(null, mSelectedBTDevice);
+                showAutoConnectDialog(mSelectedBTDevice.getName());
             } else {
                 Toast.makeText(this, R.string.bt_pairing_request, Toast.LENGTH_SHORT).show();
                 mBTConnectHelper.selectedBTAddress(mSelectedBTDevice.getAddress());
@@ -348,6 +445,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         }
     };
 
+
     @Override
     public void bluetoothState(ConnectManager.STATE state, ConnectManager.PARING paring) {
         switch (paring) {
@@ -366,12 +464,23 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         switch (state) {
             case STATE_CONNECTING:
                 mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_BT);
-                Toast.makeText(this, R.string.bt_connecting, Toast.LENGTH_SHORT).show();
+
+//                Toast.makeText(this, "连接蓝牙中", Toast.LENGTH_SHORT).show();
+//                showAutoConnectDialog("");
                 break;
             case STATE_CONNECTED:
                 Toast.makeText(this, R.string.bt_connected, Toast.LENGTH_SHORT).show();
                 break;
             case STATE_DISCONNECTED:
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Message message = new Message();
+                        message.what = 3;
+                        hd.sendMessage(message); // 发送消息
+                    }
+                }).start();
+
                 Toast.makeText(this, R.string.bt_disconnected, Toast.LENGTH_SHORT).show();
                 break;
         }
@@ -393,12 +502,38 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                 Toast.makeText(this, R.string.wifi_p2p_connecting, Toast.LENGTH_SHORT).show();
                 break;
             case STATE_CONNECTED:
-                Toast.makeText(this, R.string.wifi_p2p_connected, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "连接成功", Toast.LENGTH_SHORT).show();
                 NeckbandRestApiClient.setBaseUrl(info.groupOwnerAddress.getHostAddress());
                 mNeckbandManager.connect("newwifi", "123456");
                 mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_DONE);
+
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Message message = new Message();
+                        message.what = 2;
+                        hd.sendMessage(message); // 发送消息
+                    }
+                }).start();
+
+                if (mAutoConnectDialog.isShowing()) {
+                    mAutoConnectDialog.dismiss();
+                }
                 break;
             case STATE_DISCONNECTED:
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Message message = new Message();
+                        message.what = 3;
+                        hd.sendMessage(message); // 发送消息
+                    }
+                }).start();
+                if (mAutoConnectDialog.isShowing()) {
+                    mAutoConnectDialog.dismiss();
+                }
                 Toast.makeText(this, R.string.wifi_p2p_disconnected, Toast.LENGTH_SHORT).show();
                 break;
         }
@@ -456,6 +591,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     @Override
     public void restartAfterLocationEnabled() {
+        Log.e("ResFITT", "Device:" + mSelectedBTDevice);
         mConnector.start(null, mSelectedBTDevice);
     }
 

@@ -45,28 +45,37 @@ public class BTDeviceRecyclerAdapter extends RecyclerView.Adapter {
 
     public void addItems(ArrayList<BluetoothDevice> devices) {
         mItems.clear();
+
         for (BluetoothDevice device : devices) {
-            mItems.add(new BTItem(device, BTItem.STATE_FINDING));
+
+            if (device.getName().contains("FITT360")){
+                mItems.add(new BTItem(device, BTItem.STATE_FINDING));
+            }
+
         }
         notifyDataSetChanged();
     }
 
     public void addItem(BluetoothDevice device) {
         if (device != null) {
-            boolean noDevice = true;
-            int size = mItems.size();
-            for (int i = 0; i < size; i++) {
-                if (mItems.get(i).mDevice.getAddress().equals(device.getAddress())) {
-                    noDevice = false;
-                    mItems.get(i).mState = BTItem.STATE_NEAR;
-                    notifyItemChanged(i);
-                    break;
+
+            if (device.getName().contains("FITT360")){
+                boolean noDevice = true;
+                int size = mItems.size();
+                for (int i = 0; i < size; i++) {
+                    if (mItems.get(i).mDevice.getAddress().equals(device.getAddress())) {
+                        noDevice = false;
+                        mItems.get(i).mState = BTItem.STATE_NEAR;
+                        notifyItemChanged(i);
+                        break;
+                    }
+                }
+                if (noDevice) {
+                    mItems.add(new BTItem(device, BTItem.STATE_NEAR));
+                    notifyDataSetChanged();
                 }
             }
-            if (noDevice) {
-                mItems.add(new BTItem(device, BTItem.STATE_NEAR));
-                notifyDataSetChanged();
-            }
+
         }
     }
 
