@@ -62,4 +62,34 @@ dependencies {
     implementation 'me.jessyan:autosize:1.2.1'
     // loading
     implementation 'com.wang.avi:library:2.1.3'
+
+    // Banner
+    implementation 'com.youth.banner:banner:2.0.8'
+
+    // login Start
+    implementation 'io.reactivex:rxjava:1.2.1'
+    implementation 'io.reactivex:rxandroid:1.2.1'
+    implementation 'com.squareup.retrofit2:retrofit:2.4.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
+    implementation 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
+    implementation 'com.github.simonpercic:oklog3:2.1.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.11.0'
+    //------------The following dependencies are part of the network connection. Press to change to the APP's own network method.---------
+    //------------Third-party self-plugin libraries, must depend on---------------------------
+    implementation 'com.github.xuexiangjys:XUpdate:1.1.4'
+    implementation 'com.zhy:okhttputils:2.6.2'
+    //------------Third-party self-plugin libraries, must depend on---------------------------
+    //权限框架
+    implementation 'com.hjq:xxpermissions:6.2'
+    // Login End
+
+
+    // 圆角图片
+    implementation 'com.github.ai2101039:YLCircleImageView:v1.0.6'
+
+    //腾讯的键值对存储mmkv
+    implementation 'com.tencent:mmkv:1.0.22'
+
+    //加载效果
+    implementation 'com.github.gittjy:LoadingDialog:1.0.2'
 }

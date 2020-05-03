@@ -2,6 +2,7 @@ package com.linkflow.fitt360sdk.activity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -15,11 +16,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -33,7 +36,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.blankj.utilcode.util.ActivityUtils;
 import com.blankj.utilcode.util.BarUtils;
+import com.blankj.utilcode.util.SPUtils;
 import com.blankj.utilcode.util.ScreenUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.linkflow.fitt360sdk.R;
@@ -41,11 +46,14 @@ import com.linkflow.fitt360sdk.adapter.BTDeviceRecyclerAdapter;
 import com.linkflow.fitt360sdk.adapter.MainRecyclerAdapter;
 import com.linkflow.fitt360sdk.dialog.RTMPStreamerDialog;
 import com.linkflow.fitt360sdk.item.BTItem;
+import com.linkflow.fitt360sdk.item.BaseBean;
+import com.linkflow.fitt360sdk.item.RtmpBean;
 import com.linkflow.fitt360sdk.service.RTMPStreamService;
 import com.wang.avi.AVLoadingIndicatorView;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import app.library.linkflow.ConnectManager;
 import app.library.linkflow.connect.BTConnectHelper;
@@ -56,9 +64,12 @@ import app.library.linkflow.manager.model.PhotoModel;
 import app.library.linkflow.manager.model.RecordModel;
 import app.library.linkflow.manager.neckband.ConnectStateManage;
 import app.library.linkflow.rtmp.RTSPToRTMPConverter;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 import static com.linkflow.fitt360sdk.adapter.MainRecyclerAdapter.ID.ID_GALLERY;
 import static com.linkflow.fitt360sdk.adapter.MainRecyclerAdapter.ID.ID_SETTING;
+import static com.xuexiang.xupdate.XUpdate.getContext;
 
 public class MainActivity extends BaseActivity implements MainRecyclerAdapter.ItemClickListener,
         PhotoModel.Listener, BTDeviceRecyclerAdapter.ItemClickListener, SwipeRefreshLayout.OnRefreshListener,
@@ -102,6 +113,10 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     //////////////////////////////
     private RelativeLayout mRelLive;
+    private RelativeLayout mRelVideo;
+
+    private ImageView mIvAlbum;
+    private ImageView mIvUser;
 
 
     //////////////////////////////
@@ -131,6 +146,13 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     private Handler hd = new MyHandler();
 
+    private TextView mTvHelp;
+
+    private LinearLayout mRlBtList;
+    private ImageView mIvBtList;
+    private String TAG = "MainActivity";
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         hideHeader();
@@ -146,7 +168,8 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                     Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_NETWORK_STATE}, PERMISSION_CALLBACK);
         }
-
+        initLogin();
+//        getRtmpUrl();
         BarUtils.setStatusBarColor(this, Color.TRANSPARENT);
         initViewId();
 
@@ -218,7 +241,14 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             }
         }
         ///////////////////////////////////////////
+    }
 
+
+    private void initLogin() {
+        boolean login = SPUtils.getInstance().getBoolean("login");
+        if (!login) {
+            ActivityUtils.startActivity(LoginActivity.class);
+        }
     }
 
     private static final int UPDATE_TEXT = 1;
@@ -277,13 +307,75 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         }
     }
 
+    private ImageView mImgMainBtn;
+    private ImageView mImgCamera;
 
     private void initViewId() {
+
+
+        mImgMainBtn = findViewById(R.id.img_main_btn);
+        mImgCamera = findViewById(R.id.img_camera);
+        mImgMainBtn.bringToFront();
+        mImgCamera.bringToFront();
+
         mRelLive = findViewById(R.id.rel_live);
+        mRelVideo = findViewById(R.id.rel_video);
+
+        mIvAlbum = findViewById(R.id.iv_album);
+        mIvUser = findViewById(R.id.iv_user);
+        mTvHelp = findViewById(R.id.tv_help);
+
+        mRlBtList = findViewById(R.id.rl_bt_list);
+        mIvBtList = findViewById(R.id.iv_bt_list);
+        mRlBtList.setVisibility(View.GONE);
+
+        mIvBtList.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mRlBtList.getVisibility() == View.VISIBLE) {
+                    mRlBtList.setVisibility(View.GONE);
+                } else if (mRlBtList.getVisibility() == View.GONE) {
+                    mRlBtList.setVisibility(View.VISIBLE);
+                }
+
+            }
+        });
+
+        mIvUser.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ActivityUtils.startActivity(UserActivity.class);
+            }
+        });
+
+        mTvHelp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ActivityUtils.startActivity(HelpActivity.class);
+            }
+        });
+
+        mIvAlbum.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ActivityUtils.startActivity(GalleryActivity.class);
+                finish();
+            }
+        });
+
+
         mRelLive.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, LiveActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        mRelVideo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, VideoActivity.class);
                 startActivity(intent);
             }
         });
@@ -306,7 +398,11 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
         Log.e("ResFITT", "ReDevice:" + mSelectedBTDevice);
 
+//        getRtmpUrl();
+
     }
+
+
 
     @Override
     protected void onStart() {
@@ -323,7 +419,9 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                 mRSToRMConverter.stop();
             }
         }
-        mNeckbandManager.getPreviewModel().activateRTSP(mNeckbandManager.getAccessToken(), false);
+//        mNeckbandManager.getPreviewModel().getMuteState();
+//        if ()
+//        mNeckbandManager.getPreviewModel().activateRTSP(mNeckbandManager.getAccessToken(), false);
     }
 
     @Override

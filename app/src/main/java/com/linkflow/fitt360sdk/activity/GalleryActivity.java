@@ -1,14 +1,19 @@
 package com.linkflow.fitt360sdk.activity;
 
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.blankj.utilcode.util.BarUtils;
 import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.adapter.GalleryRecyclerAdapter;
 
@@ -18,6 +23,7 @@ import app.library.linkflow.Constant;
 import app.library.linkflow.manager.helper.DownloadHelper;
 import app.library.linkflow.manager.helper.GPSXmlToGPSTxtHelper;
 
+import com.linkflow.fitt360sdk.helper.GridSpacingItemDecoration;
 import com.linkflow.fitt360sdk.item.GalleryItem;
 import com.linkflow.fitt360sdk.model.MediaModel;
 
@@ -26,6 +32,10 @@ public class GalleryActivity extends BaseActivity implements GalleryRecyclerAdap
     private MediaModel mMediaModel;
     private GPSXmlToGPSTxtHelper mParser;
 
+    private ImageView mTvBack;
+
+
+
     private TextView mDownloadAllBtn, mDeleteAllBtn;
     Button bt_sort;
     public boolean sort = true;
@@ -33,17 +43,38 @@ public class GalleryActivity extends BaseActivity implements GalleryRecyclerAdap
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setBodyView(R.layout.activity_gallery);
-        setHeaderTitle(R.string.gallery);
+//        setBodyView(R.layout.activity_gallery);
+        setContentView(R.layout.activity_gallery);
+//        setHeaderTitle(R.string.gallery);
+
+        BarUtils.setStatusBarColor(this, Color.TRANSPARENT);
+
 
         mParser = new GPSXmlToGPSTxtHelper();
         mMediaModel = new MediaModel(this);
 
         RecyclerView recyclerView = findViewById(R.id.recycler);
-        LinearLayoutManager manager = new LinearLayoutManager(this);
+
+
+//        LinearLayoutManager manager = new LinearLayoutManager(this);
+        int spanCount = 2;
+        int spacing = 40;
+        boolean includeEdge = false;
+        recyclerView.addItemDecoration(new GridSpacingItemDecoration(spanCount, spacing, includeEdge));
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);//一列
+
         mAdapter = new GalleryRecyclerAdapter(this, this);
-        recyclerView.setLayoutManager(manager);
+        recyclerView.setLayoutManager(gridLayoutManager);
         recyclerView.setAdapter(mAdapter);
+
+
+        mTvBack = findViewById(R.id.tv_back);
+        mTvBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
     }
 
     @Override

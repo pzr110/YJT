@@ -18,7 +18,9 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
+import com.blankj.utilcode.util.ActivityUtils;
 import com.blankj.utilcode.util.BarUtils;
+import com.blankj.utilcode.util.SPUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.dialog.RTMPStreamerDialog;
@@ -87,6 +89,10 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     private TextView mTvPower;
 
     private boolean isTimer = false;
+
+    private ImageView mIvAlbum;
+    private ImageView mIvUser;
+
 
 
     @Override
@@ -309,11 +315,16 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
 
 //        mTvMine = findViewById(R.id.tv_mine);
-
+        mIvAlbum = findViewById(R.id.iv_album);
+        mIvUser = findViewById(R.id.iv_user);
         mImgMainBtn.bringToFront();
         mImgRedDot.bringToFront();
         mImgMainBtn.setOnClickListener(this::onClick);
         mTvBack.setOnClickListener(this::onClick);
+        mIvAlbum.setOnClickListener(this::onClick);
+        mIvUser.setOnClickListener(this::onClick);
+
+
     }
 
     private void startStream() {
@@ -321,11 +332,12 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
         mTimeUtils.start();
         isTimer = true;
 
+        String deviceRtmpUrl = SPUtils.getInstance().getString("deviceRtmpUrl", "rtmp://192.168.0.32:1935/ccmc/stream1");
 
         mNeckbandManager.getNotifyManage().getNotifyModel().agreementTemperLimit(mNeckbandManager.getAccessToken(), true, this);
         Intent intent = new Intent(LiveActivity.this, RTMPStreamService.class);
         intent.setAction(RTMPStreamService.ACTION_START_RTMP_STREAM);
-        intent.putExtra("rtmp_url", "rtmp://192.168.0.250:1935/ccmc/stream1");
+        intent.putExtra("rtmp_url", deviceRtmpUrl);
         intent.putExtra("rtmp_bitrate_auto", false);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -376,12 +388,15 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
             mSpFps.setEnabled(false);
             mSpResolution.setEnabled(false);
             mSpUpload.setEnabled(false);
+            mIvAlbum.setEnabled(false);
+            mIvUser.setEnabled(false);
 
             listenerEnable = false;
         } else {
             // 停止了推流
             listenerEnable = true;
-
+            mIvAlbum.setEnabled(true);
+            mIvUser.setEnabled(true);
 //            mTvBack.setEnabled(true);
             mSpFps.setEnabled(true);
             mSpResolution.setEnabled(true);
@@ -421,6 +436,14 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                     ToastUtils.showShort(R.string.str_stop_live);
                 }
                 break;
+            }
+            case R.id.iv_album:{
+                ActivityUtils.startActivity(AlbumActivity.class);
+                break;
+            }
+            case R.id.iv_user:{
+                ActivityUtils.startActivity(UserActivity.class);
+
             }
         }
 

@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone"
         android:layout_marginBottom="50dp"
-        android:padding="10dp" />
+        android:padding="10dp"
+        android:visibility="gone" />
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="20dp"
-        android:visibility="gone"
-        android:layout_marginBottom="10dp">
+        android:layout_marginBottom="10dp"
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/lfurl"
@@ -37,27 +37,44 @@
             android:layout_height="wrap_content">
 
             <LinearLayout
-                android:layout_centerHorizontal="true"
                 android:id="@+id/ll_bt_list"
                 android:layout_width="wrap_content"
-                android:layout_marginTop="?attr/actionBarSize"
                 android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
                 android:orientation="vertical">
 
-                <RelativeLayout
+                <LinearLayout
                     android:id="@+id/rl_bt_list"
                     android:layout_width="304dp"
                     android:layout_height="370dp"
-                    android:background="@mipmap/img_bt_list">
+
+                    android:background="@mipmap/img_bt_list"
+                    android:orientation="vertical">
 
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerConnect"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
+                        android:layout_height="wrap_content" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/tv_help"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:padding="15dp"
+                        android:layout_marginBottom="50dp"
+                        android:text="@string/str_user_help"
+                        android:textColor="@color/color_6BCAFF"
+                        android:textSize="24sp" />
 
 
-                </RelativeLayout>
+                </LinearLayout>
 
                 <ImageView
                     android:id="@+id/iv_bt_list"
@@ -174,11 +191,10 @@
             </LinearLayout>
 
 
-
             <RelativeLayout
-                android:layout_alignParentBottom="true"
                 android:layout_width="match_parent"
-                android:layout_height="135dp">
+                android:layout_height="135dp"
+                android:layout_alignParentBottom="true">
 
                 <ImageView
                     android:id="@+id/img_main_btn"
@@ -203,17 +219,35 @@
                     android:gravity="center"
                     android:orientation="horizontal">
 
-                    <ImageView
+                    <RelativeLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:src="@mipmap/ic_album" />
+                        android:layout_weight="1">
 
-                    <ImageView
+                        <ImageView
+                            android:id="@+id/iv_album"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:paddingHorizontal="35dp"
+                            android:paddingVertical="15dp"
+                            android:src="@mipmap/ic_album" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:src="@mipmap/ic_user" />
+                        android:layout_weight="1">
+
+                        <ImageView
+                            android:id="@+id/iv_user"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:paddingHorizontal="35dp"
+                            android:paddingVertical="15dp"
+                            android:src="@mipmap/ic_user" />
+                    </RelativeLayout>
 
 
                 </LinearLayout>

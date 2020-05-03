@@ -456,17 +456,35 @@
                     android:gravity="center"
                     android:orientation="horizontal">
 
-                    <ImageView
+                    <RelativeLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:src="@mipmap/ic_album" />
+                        android:layout_weight="1">
 
-                    <ImageView
+                        <ImageView
+                            android:id="@+id/iv_album"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:paddingHorizontal="35dp"
+                            android:paddingVertical="15dp"
+                            android:src="@mipmap/ic_album" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:src="@mipmap/ic_user" />
+                        android:layout_weight="1">
+
+                        <ImageView
+                            android:id="@+id/iv_user"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:paddingHorizontal="35dp"
+                            android:paddingVertical="15dp"
+                            android:src="@mipmap/ic_user" />
+                    </RelativeLayout>
 
 
                 </LinearLayout>
