@@ -70,12 +70,35 @@
                 android:textSize="36sp" />
 
             <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:entries="@array/upload"
+                android:paddingStart="502dp"
+                android:textSize="12sp"
+                android:theme="@style/itemSpinnerStyle2"
+                tools:ignore="RtlSymmetry" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="上传速度"
+                android:textSize="36sp" />
+
+            <Spinner
                 android:id="@+id/sp_upload"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:entries="@array/upload"
-                android:paddingStart="540dp"
+                android:paddingStart="502dp"
                 android:textSize="12sp"
                 android:theme="@style/itemSpinnerStyle2"
                 tools:ignore="RtlSymmetry" />
@@ -100,7 +123,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:entries="@array/fps"
-                android:paddingStart="550dp"
+                android:paddingStart="502dp"
                 android:textSize="12sp"
                 android:theme="@style/itemSpinnerStyle2" />
         </RelativeLayout>

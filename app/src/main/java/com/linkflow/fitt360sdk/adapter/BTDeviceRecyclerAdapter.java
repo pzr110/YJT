@@ -3,6 +3,7 @@ package com.linkflow.fitt360sdk.adapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -106,10 +107,12 @@ public class BTDeviceRecyclerAdapter extends RecyclerView.Adapter {
     }
 
     public void checked(int beforePosition, int currentPosition) {
+
         if (beforePosition != -1) {
             mItems.get(beforePosition).setChecked(false);
             notifyItemChanged(beforePosition);
         }
+
         mItems.get(currentPosition).setChecked(true);
         notifyItemChanged(currentPosition);
     }

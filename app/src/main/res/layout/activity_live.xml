@@ -257,22 +257,22 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
-<!--                        <Chronometer-->
-<!--                            android:id="@+id/tv_live_time"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:format="00:00:00"-->
-<!--                            android:visibility="gone"-->
-<!--                            android:textColor="@color/color_5B5DFF"-->
-<!--                            android:textSize="50sp" />-->
+                        <!--                        <Chronometer-->
+                        <!--                            android:id="@+id/tv_live_time"-->
+                        <!--                            android:layout_width="wrap_content"-->
+                        <!--                            android:layout_height="wrap_content"-->
+                        <!--                            android:format="00:00:00"-->
+                        <!--                            android:visibility="gone"-->
+                        <!--                            android:textColor="@color/color_5B5DFF"-->
+                        <!--                            android:textSize="50sp" />-->
 
                         <TextView
                             android:id="@+id/tv_time"
-                            android:textSize="86sp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
                             android:text="00:00:00"
                             android:textColor="@color/color_5B5DFF"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
+                            android:textSize="86sp" />
 
                         <!--                    <TextView-->
                         <!--                        android:layout_width="wrap_content"-->
@@ -331,6 +331,28 @@
                             android:entries="@array/resolution"
                             android:paddingStart="100dp"
                             android:theme="@style/itemSpinnerStyle" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:text="自适应网络"
+                            android:textSize="23sp" />
+
+                        <Switch
+                            android:id="@+id/switch_auto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="25dp"
+                            android:layout_alignParentEnd="true"
+                            android:thumb="@drawable/switch_ios_thumb"
+                            android:track="@drawable/switch_ios_track_selector" />
                     </RelativeLayout>
 
                     <RelativeLayout

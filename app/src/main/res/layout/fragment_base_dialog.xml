@@ -27,7 +27,7 @@
             android:layout_toStartOf="@id/base_dialog_agree"
             android:gravity="center|end"
             android:text="@string/no"
-            android:textSize="15sp"
+            android:textSize="24sp"
             android:textColor="@color/base_dialog_disagree"/>
         <TextView
             android:id="@+id/base_dialog_agree"
@@ -38,7 +38,7 @@
             android:layout_alignParentEnd="true"
             android:gravity="center"
             android:text="@string/yes"
-            android:textSize="15sp"
+            android:textSize="24sp"
             android:textColor="@color/base_dialog_disagree"/>
     </RelativeLayout>
 </LinearLayout>

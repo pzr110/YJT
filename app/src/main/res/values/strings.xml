@@ -4,8 +4,8 @@
 
     <string name="on">On</string>
     <string name="off">Off</string>
-    <string name="yes">Yes</string>
-    <string name="no">No</string>
+    <string name="yes">确认</string>
+    <string name="no">取消</string>
     <string name="close">Close</string>
     <string name="cancel">CANCEL</string>
     <string name="delete">DELETE</string>

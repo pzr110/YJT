@@ -248,7 +248,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
             case NotifyManage.TEMPER_ALERT_SECOND:
                 if (!mTemperLimitAlertDialog.isAdded()) {
                     mTemperLimitAlertDialog.showWithMessage(getSupportFragmentManager(),
-                            "温度升高, 设备将在 " + getWorkingState() + " 5分钟后退出。\n是否继续?");
+                            "温度升高, 即将退出" + getWorkingState()+ "\n是否继续?");
                 }
                 break;
             case NotifyManage.TEMPER_ALERT_THIRD:

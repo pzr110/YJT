@@ -13,9 +13,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Chronometer;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -98,6 +100,11 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     private ImageView mIvUser;
     public static final String ACTION_START_RTMP = "start_rtmp", ACTION_STOP_RTMP = "stop_rtmp";
 
+    private Switch mSwitchAuto;
+
+    private boolean isAutoBit = false;
+
+
     private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -147,6 +154,9 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
         getPower();
         Log.e("TAGTAG", "Status" + mConverter.getSentByteAmount());
 
+
+
+
     }
 
     private void getPower() {
@@ -168,10 +178,10 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                             if (success) {
 
                                 mBeforeBatteryLevel = statusItem.mBatteryLevel;
-                                Log.e("power","power:"+mBeforeBatteryLevel);
+                                Log.e("power", "power:" + mBeforeBatteryLevel);
 
                                 mProgressBarPower.setProgress(mBeforeBatteryLevel);
-                                mTvPower.setText(mBeforeBatteryLevel+"%");
+                                mTvPower.setText(mBeforeBatteryLevel + "%");
 //                                Toast.makeText(LiveActivity.this, "仅剩" + mBeforeBatteryLevel + "% 电量", Toast.LENGTH_SHORT).show();
                             }
                         }
@@ -211,7 +221,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     protected void onDestroy() {
         super.onDestroy();
 
-        if (isTimer){
+        if (isTimer) {
             mTimeUtils.stop();
         }
 
@@ -337,7 +347,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
         mProgressBarPower.setMax(100);
         mProgressBarPower.setProgress(100);
-        mTvPower.setText(100+"%");
+        mTvPower.setText(100 + "%");
 
 
 //        mTvMine = findViewById(R.id.tv_mine);
@@ -351,6 +361,21 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
         mIvUser.setOnClickListener(this::onClick);
 
 
+        mSwitchAuto = findViewById(R.id.switch_auto);
+
+        mSwitchAuto.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    isAutoBit = true;
+                    mSpUpload.setEnabled(false);
+                } else {
+                    isAutoBit = false;
+                }
+            }
+        });
+
+
     }
 
     private void startStream() {
@@ -360,12 +385,12 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
         String deviceRtmpUrl = SPUtils.getInstance().getString("deviceRtmpUrl", "rtmp://192.168.0.250:1935/ccmc/stream1");
 
-        Log.e("TAGLIVE","URL:"+deviceRtmpUrl);
-        mNeckbandManager.getNotifyManage().getNotifyModel().agreementTemperLimit(mNeckbandManager.getAccessToken(), true, this);
+        Log.e("TAGLIVE", "URL:" + deviceRtmpUrl);
+//        mNeckbandManager.getNotifyManage().getNotifyModel().agreementTemperLimit(mNeckbandManager.getAccessToken(), true, this);
         Intent intent = new Intent(LiveActivity.this, RTMPStreamService.class);
         intent.setAction(RTMPStreamService.ACTION_START_RTMP_STREAM);
         intent.putExtra("rtmp_url", deviceRtmpUrl);
-        intent.putExtra("rtmp_bitrate_auto", false);
+        intent.putExtra("rtmp_bitrate_auto", isAutoBit);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Log.e("TAGPZR", "HEREBBB");
@@ -464,11 +489,11 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                 }
                 break;
             }
-            case R.id.iv_album:{
+            case R.id.iv_album: {
                 ActivityUtils.startActivity(AlbumActivity.class);
                 break;
             }
-            case R.id.iv_user:{
+            case R.id.iv_user: {
                 ActivityUtils.startActivity(UserActivity.class);
 
             }

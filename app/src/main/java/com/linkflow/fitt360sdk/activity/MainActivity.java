@@ -669,9 +669,11 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     }
 
-    private void autoConnect() {
-        mAdapterConnect.addItems(mBTConnectHelper.getBondedBTList());
+    int iCoent = 0;
 
+    private void autoConnect() {
+        Log.e("Count", "Coutn" + iCoent);
+        iCoent++;
 
         /// 自动重连
         ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList();
@@ -680,6 +682,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             if (mBTConnectHelper.isBondedDevice(bondedBTList.get(i))) {
                 Log.e("TAGOld", "发现旧设备");
                 BluetoothDevice bluetoothDevice = bondedBTList.get(i);
+                int bondState = bluetoothDevice.getBondState();
                 mSelectedBTDevice = bluetoothDevice;
 //                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
                 mConnector.start(null, bondedBTList.get(i));
@@ -734,6 +737,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         BTItem item = mAdapterConnect.getItem(position);
         if (item.mState == BTItem.STATE_NEAR) {
             mAdapterConnect.checked(mBeforeClickedItemPosition, position);
+            Log.e("TAGDDD","clickedItemConnect");
             mBeforeClickedItemPosition = position;
             mProgressBar.setVisibility(View.GONE);
             mBTConnectHelper.disconnect();
@@ -844,9 +848,11 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         switch (state) {
             case STATE_CONNECTING:
                 mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_BT);
-
 //                Toast.makeText(this, "连接蓝牙中", Toast.LENGTH_SHORT).show();
                 showAutoConnectDialog(mSelectedBTDevice.getName());
+//                if (pztCon>5){
+//                    mAutoConnectDialog
+//                }
 
                 break;
             case STATE_CONNECTED:

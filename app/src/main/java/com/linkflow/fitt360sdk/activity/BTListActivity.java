@@ -162,6 +162,7 @@ public class BTListActivity extends BaseActivity implements BTDeviceRecyclerAdap
             if (correctDevicePosition != -1) {
                 mBeforeClickedItemPosition = correctDevicePosition;
                 mAdapter.checked(-1, correctDevicePosition);
+
             }
         }
     }
