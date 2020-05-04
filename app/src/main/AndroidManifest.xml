@@ -84,6 +84,7 @@
         </activity>
         <activity android:name=".activity.user.UserMangerActivity" />
         <activity android:name=".activity.user.LiveSettingActivity" />
+        <activity android:name=".activity.user.AboutActivity" />
 
         <service android:name=".service.RTMPStreamService"
             android:exported="false" >

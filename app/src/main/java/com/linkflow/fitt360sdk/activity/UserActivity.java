@@ -10,12 +10,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,6 +28,7 @@ import com.blankj.utilcode.util.BarUtils;
 import com.blankj.utilcode.util.SPUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.linkflow.fitt360sdk.R;
+import com.linkflow.fitt360sdk.activity.user.AboutActivity;
 import com.linkflow.fitt360sdk.activity.user.LiveSettingActivity;
 import com.linkflow.fitt360sdk.activity.user.UserMangerActivity;
 
@@ -52,6 +55,7 @@ public class UserActivity extends BaseActivity implements View.OnClickListener {
 
     private boolean hotChecked = false;
 
+    private LocationManager lm;//【位置管理】
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -70,31 +74,54 @@ public class UserActivity extends BaseActivity implements View.OnClickListener {
 
     private void initListener() {
 //        hotChecked = mSwitchHot.isChecked();
+
+
         mSwitchHot.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked){
+                if (isChecked) {
                     openHotAlarm();
                     ToastUtils.showShort("开启");
-                }else {
+                } else {
                     openHotAlarm();
                     ToastUtils.showShort("关闭");
+                }
+            }
+        });
 
+        boolean oPenGps = isOPenGps(getApplicationContext());
+        mSwitchGps.setChecked(oPenGps);
+        mSwitchGps.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    openGPS();
+                } else {
+                    openGPS();
                 }
             }
         });
     }
 
+    private void openGPS() {
+        boolean enable = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+
+        Toast.makeText(this, "系统检测到未开启GPS定位服务", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        startActivityForResult(intent, 200);
+    }
+
     private void openHotAlarm() {
 
         boolean enabled = !(mNeckbandManager.getSetManage().isNormalLimitEnable() || mNeckbandManager.getSetManage().isSafeLimitEnable());
-
+        Log.e("Enable:", "ASD" + enabled);
         mNeckbandManager.getSetManage().getTemperModel().setTemperLimitEnable(mNeckbandManager.getAccessToken(), TemperModel.Type.NORMAL, enabled);
         mNeckbandManager.getSetManage().getTemperModel().setTemperLimitEnable(mNeckbandManager.getAccessToken(), TemperModel.Type.SAFE, enabled);
 
+
     }
-
-
 
 
     private void initInfo() {
@@ -115,6 +142,9 @@ public class UserActivity extends BaseActivity implements View.OnClickListener {
         mIvUser = findViewById(R.id.iv_user);
         mSwitchHot = findViewById(R.id.switch_hot);
         mSwitchGps = findViewById(R.id.switch_gps);
+
+        boolean enable = (mNeckbandManager.getSetManage().isNormalLimitEnable() || mNeckbandManager.getSetManage().isSafeLimitEnable());
+        mSwitchHot.setChecked(enable);
 
         mTvUserName = findViewById(R.id.tv_user_name);
 
@@ -156,16 +186,33 @@ public class UserActivity extends BaseActivity implements View.OnClickListener {
                 ActivityUtils.startActivity(GalleryActivity.class);
                 break;
             }
-            case R.id.ll_about:{
-//                boolean oPen = isOPen(getApplicationContext());
-//                ToastUtils.showShort("ZT:L"+oPen);
+            case R.id.ll_about: {
+                ActivityUtils.startActivity(AboutActivity.class);
                 break;
             }
 
         }
     }
 
+    /**
+     * 判断GPS是否开启，GPS或者AGPS开启一个就认为是开启的
+     *
+     * @param context
+     * @return true 表示开启
+     */
+    public static final boolean isOPenGps(final Context context) {
+        LocationManager locationManager
+                = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        // 通过GPS卫星定位，定位级别可以精确到街（通过24颗卫星定位，在室外和空旷的地方定位准确、速度快）
+        boolean gps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        // 通过WLAN或移动网络(3G/2G)确定的位置（也称作AGPS，辅助GPS定位。主要用于在室内或遮盖物（建筑群或茂密的深林等）密集的地方定位）
+        boolean network = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        if (gps || network) {
+            return true;
+        }
 
+        return false;
+    }
 
 
 }

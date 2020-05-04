@@ -107,7 +107,6 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                     if (intent.getIntExtra("close", -1) == 10) {
 //                        mAdapter.changeStreamingState(false);
                         mTimeUtils.stop();
-
                     }
                 } else if (action.equals(ACTION_START_RTMP)) {
 //                    mAdapter.changeStreamingState(true);

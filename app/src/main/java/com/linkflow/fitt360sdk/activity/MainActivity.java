@@ -76,6 +76,7 @@ import app.library.linkflow.connect.WifiConnectHelper;
 import app.library.linkflow.manager.NeckbandRestApiClient;
 import app.library.linkflow.manager.model.PhotoModel;
 import app.library.linkflow.manager.model.RecordModel;
+import app.library.linkflow.manager.model.TemperModel;
 import app.library.linkflow.manager.neckband.ConnectStateManage;
 import app.library.linkflow.rtmp.RTSPToRTMPConverter;
 import rx.android.schedulers.AndroidSchedulers;
@@ -257,6 +258,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         mRSToRMConverter = RTSPToRTMPConverter.getInstance();
         mRTMPStreamerDialog = new RTMPStreamerDialog();
         mRTMPStreamerDialog.setClickListener(this);
+
 
         mRecordModel = mNeckbandManager.getRecordModel(this);
         mPhotoModel = mNeckbandManager.getPhotoModel(this);

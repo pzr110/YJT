@@ -10,6 +10,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+
+
         <com.wang.avi.AVLoadingIndicatorView
             android:id="@+id/avi_loading"
             android:layout_width="wrap_content"
@@ -17,6 +19,12 @@
             android:layout_centerInParent="true"
             app:indicatorColor="@color/color_FF0000"
             app:indicatorName="BallPulseIndicator" />
+
+        <ImageView
+            android:src="@mipmap/img_yd_logo"
+            android:layout_alignParentEnd="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
 
         <LinearLayout
             android:layout_width="match_parent"
