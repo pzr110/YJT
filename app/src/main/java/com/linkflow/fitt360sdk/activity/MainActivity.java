@@ -10,6 +10,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.icu.text.TimeZoneFormat;
@@ -40,6 +41,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -223,6 +225,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     private BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+    private LocationManager lm;//【位置管理】
 
     //创建WifiManager对象
     private WifiManager wifiManager;
@@ -307,6 +310,10 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
         mAdapterConnect.addItems(mBTConnectHelper.getBondedBTList());
 
+        boolean blueState = mBluetoothAdapter.isEnabled(); // 蓝牙打开状态
+        boolean oPenGps = isOPenGps(getApplicationContext()); // GPS 状态
+        boolean wifiEnabled = wifiManager.isWifiEnabled(); // WIFI状态
+
         /// 自动重连
 //        ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList();
 //        for (int i = 0; i < bondedBTList.size(); i++) {
@@ -322,6 +329,9 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 //            }
 //        }
         ///////////////////////////////////////////
+        lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+
     }
 
 
@@ -505,6 +515,18 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     }
 
+//    // 打开WIFI
+//    @SuppressLint("WrongConstant")
+//    public void openWifi(Context context) {
+//        if (!mWifiManager.isWifiEnabled()) {
+//            mWifiManager.setWifiEnabled(true);
+//        }else if (mWifiManager.getWifiState() == 2) {
+//            Toast.makeText(context,"亲，Wifi正在开启，不用再开了", Toast.LENGTH_SHORT).show();
+//        }else{
+//            Toast.makeText(context,"亲，Wifi已经开启,不用再开了", Toast.LENGTH_SHORT).show();
+//        }
+//    }
+
 
     private void showDeviceStateDialog(boolean blueState, boolean oPenGps, boolean wifiEnabled) {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_phone_state, null, false);
@@ -528,9 +550,35 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         mSwitchWifi.setChecked(wifiEnabled);
         mSwitchGPS.setChecked(oPenGps);
 
+        mSwitchGPS.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    openGPS();
+                } else {
+                    openGPS();
+                }
+            }
+        });
+
         if (blueState && oPenGps && wifiEnabled) {
             Log.e("State", "已经全部打开");
         }
+
+        mSwitchWifi.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    if (!mWifiManager.isWifiEnabled()) {
+                        mWifiManager.setWifiEnabled(true);
+                    }
+                } else {
+                    if (mWifiManager.isWifiEnabled()) {
+                        mWifiManager.setWifiEnabled(false);
+                    }
+                }
+            }
+        });
 
         mSwitchBlue.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -563,6 +611,16 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         params.width = (int) ((d.getWidth()) * 0.3);
         params.height = (int) ((d.getHeight()) * 0.9);
         mDialogState.getWindow().setAttributes(params);
+    }
+
+    private void openGPS() {
+        boolean enable = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+
+        Toast.makeText(this, "系统检测到未开启GPS定位服务", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        startActivityForResult(intent, 200);
     }
 
     /**
@@ -599,13 +657,36 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         if (blueState && oPenGps && wifiEnabled) {
             Log.e("State", "已经全部打开");
             mDialogState.dismiss();
+            autoConnect();
         } else {
 //            mDialogState.show();
             ToastUtils.showShort("请打开相关设置");
             Log.e("State", "AAA");
         }
 
+
     }
+
+    private void autoConnect() {
+        mAdapterConnect.addItems(mBTConnectHelper.getBondedBTList());
+
+
+        /// 自动重连
+        ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList();
+        for (int i = 0; i < bondedBTList.size(); i++) {
+
+            if (mBTConnectHelper.isBondedDevice(bondedBTList.get(i))) {
+                Log.e("TAGOld", "发现旧设备");
+                BluetoothDevice bluetoothDevice = bondedBTList.get(i);
+                mSelectedBTDevice = bluetoothDevice;
+//                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
+                mConnector.start(null, bondedBTList.get(i));
+                isAutoConnect = true;
+                break;
+            }
+        }
+    }
+
 
     @Override
     protected void onDestroy() {
