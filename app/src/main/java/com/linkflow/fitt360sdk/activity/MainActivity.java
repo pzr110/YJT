@@ -383,7 +383,6 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             @Override
             public void onClick(View v) {
                 ActivityUtils.startActivity(GalleryActivity.class);
-                finish();
             }
         });
 
