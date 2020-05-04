@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.linkflow.fitt360sdk.activity.LiveActivity;
 import com.linkflow.fitt360sdk.activity.MainActivity;
 import com.linkflow.fitt360sdk.helper.NotificationHelper;
 import com.linkflow.fitt360sdk.helper.TimerHelper;
@@ -64,15 +65,12 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
 
     private long lastBitrateChangeExecutionTime = -1;
 
-
     @Override
     public void onCreate() {
         super.onCreate();
         mNeckbandManager = NeckbandManager.getInstance();
         mNotifyManager = NotificationHelper.getInstance().init(this);
         mTimerHelper = TimerHelper.getInstance().init(getMainLooper(), this);
-        String accessToken = mNeckbandManager.getAccessToken();
-        Log.e("2222222222","Token"+accessToken);
         mPreviewModel = mNeckbandManager.getPreviewModel();
         mPreviewModel = new PreviewModel(new PreviewModel.Listener() {
             @Override
@@ -103,8 +101,6 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
             @Override
             public void handleMessage(@NonNull Message msg) {
                 super.handleMessage(msg);
-                String accessToken = mNeckbandManager.getAccessToken();
-                Log.e("1111111111111111","Token"+accessToken);
                 if (msg.what == MSG_RTSP_CONFIGURE_CHANGED) {
                     mPreviewModel.activateRTSP(mNeckbandManager.getAccessToken(), false);
                     isRTSPConnected = false;
@@ -123,7 +119,6 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                         mPreviewModel.activateRTSP(mNeckbandManager.getAccessToken(), true);
                     }
                 } else if (msg.what == MSG_RTSP_CONNECT) {
-                    Log.e("111111111","MSG_RTSP_CONNECT");
                     mConverter.closeRTSPDecoder();
 
                     mRTSPCheckHandler.sendEmptyMessageDelayed(MSG_RTSP_CHECK_STARTED, 4000);
@@ -140,6 +135,7 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
             @Override
             public void handleMessage(@NonNull Message msg) {
                 super.handleMessage(msg);
+
                 mPreviewModel.activateRTSP(mNeckbandManager.getAccessToken(), true);
             }
         };
@@ -164,7 +160,6 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                     if (mRTMPUrl != null) {
                         if (mConverter.startRTMP(mRTMPUrl)) {
                             // backup original bitrate value and set temporary start bitrate to device
-                            Log.e("PZRTAG","mNeckbandManager"+mNeckbandManager.getSetManage().getBitrate());
                             mSDM.setData(this, "bitrateStartTime", mNeckbandManager.getSetManage().getBitrate());
                             if (mEnableBitrateAuto) {
                                 startAutoBitrateChanger();
@@ -174,8 +169,8 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                             // Add a little delay to have enough time to device setting applied
                             mRTSPMsgHandler.sendEmptyMessageDelayed(0, 100);
 
-                            mTimerHelper.start();
-                            LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(MainActivity.ACTION_START_RTMP));
+//                            mTimerHelper.start();
+                            LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(LiveActivity.ACTION_START_RTMP));
                         } else {
                             stopForeground(true);
                             stopSelf();
@@ -183,7 +178,7 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                     }
                     break;
                 case ACTION_CANCEL_RTMP_STREAM:
-                    Intent closeIntent = new Intent(MainActivity.ACTION_STOP_RTMP);
+                    Intent closeIntent = new Intent(LiveActivity.ACTION_STOP_RTMP);
                     closeIntent.putExtra("close", intent.getIntExtra("close", -1));
                     LocalBroadcastManager.getInstance(this).sendBroadcast(closeIntent);
 
@@ -217,7 +212,7 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
         mConverter.stop();
         mTimerHelper.stop();
 
-        Intent intent = new Intent(MainActivity.ACTION_STOP_RTMP);
+        Intent intent = new Intent(LiveActivity.ACTION_STOP_RTMP);
         intent.putExtra("close", 10);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
@@ -235,13 +230,13 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
         String value = "";
         switch (status) {
             case CONNECTED:
-                value = "开始直播";
+                value = "直播已连接";
                 break;
             case RECONNECTING:
-                value = "Live Streaming Reconnecting (3 mins) ...";
+                value = "直播重新连接中（3分钟） ...";
                 break;
             case DISCONNECTED:
-                value = "Live Streaming Disconnected";
+                value = "直播中断";
                 break;
         }
         Toast.makeText(this, value, Toast.LENGTH_LONG).show();
@@ -273,8 +268,8 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                 Toast.makeText(this, str, Toast.LENGTH_LONG).show();
                 break;
             case RTSP_INTERNAL_ERROR:
-//                str = "Stop stream\nNetwork internal error happened during data transmission";
-                str = "停止推流";
+//                str = "直播停止\nNetwork internal error happened during data transmission";
+                str = "直播停止";
                 Log.e(TAG, str);
                 Toast.makeText(this, str, Toast.LENGTH_LONG).show();
                 closeService();
@@ -300,14 +295,13 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
             statusColor = Color.BLACK;
         }
 
-
         Notification notification = mNotifyManager.makeRTMPStreamStatus(this, currentStatusMsg, statusColor, time, mDecimalFormat.format((mConverter.getSentByteAmount() / 1000000f) * 8) + " Mb/s");
         startForeground(NotificationHelper.RTMP_STREAM_NOTIFY_ID, notification);
 
     }
 
     private void closeService() {
-        Intent intent = new Intent(MainActivity.ACTION_STOP_RTMP);
+        Intent intent = new Intent(LiveActivity.ACTION_STOP_RTMP);
         intent.putExtra("close", 10);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 

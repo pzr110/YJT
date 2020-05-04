@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.icu.text.TimeZoneFormat;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.os.Build;
@@ -54,6 +55,8 @@ import com.wang.avi.AVLoadingIndicatorView;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import app.library.linkflow.ConnectManager;
 import app.library.linkflow.connect.BTConnectHelper;
@@ -152,6 +155,8 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     private ImageView mIvBtList;
     private String TAG = "MainActivity";
 
+    private boolean isAutoConnect = false;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -234,9 +239,11 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
             if (mBTConnectHelper.isBondedDevice(bondedBTList.get(i))) {
                 Log.e("TAGOld", "发现旧设备");
+                BluetoothDevice bluetoothDevice = bondedBTList.get(i);
+                mSelectedBTDevice = bluetoothDevice;
 //                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
                 mConnector.start(null, bondedBTList.get(i));
-                showAutoConnectDialog(bondedBTList.get(i).getName());
+                isAutoConnect = true;
                 break;
             }
         }
@@ -278,27 +285,44 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 //        mConnectDialog.getWindow().setLayout((ScreenUtils.getScreenWidth() / 3), LinearLayout.LayoutParams.WRAP_CONTENT);
     }
 
+//    TimerTask mTimerTask = new TimerTask() {
+//        @Override
+//        public void run() {
+//            mAutoConnectDialog.dismiss();
+//        }
+//    };
+
+    class MyTask extends  TimerTask{
+
+        @Override
+        public void run() {
+            mAutoConnectDialog.dismiss();
+        }
+    }
+
+
     // 定义一个内部类继承自Handler，并且覆盖handleMessage方法用于处理子线程传过来的消息
+    @SuppressLint("HandlerLeak")
     class MyHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
                 case 1: // 接受到消息之后，对UI控件进行修改
-                    mTextView.setText("开始连接！");
+                    mTextView.setText("开始连接"+mSelectedBTDevice.getName());
                     break;
                 case 2: {
-                    mTextView.setText("连接成功！");
-                    if (mAutoConnectDialog.isShowing()) {
-                        mAutoConnectDialog.dismiss();
-                    }
+                    mTextView.setText("已成功连接"+mSelectedBTDevice.getName());
+                    MyTask task = new MyTask();
+                    Timer timer = new Timer();
+                    timer.schedule(task,1000);
                     break;
                 }
                 case 3: {
-                    mTextView.setText("连接失败！请重试");
-                    if (mAutoConnectDialog.isShowing()) {
-                        mAutoConnectDialog.dismiss();
-                    }
+                    mTextView.setText("连接"+mSelectedBTDevice.getName()+"失败！请重试");
+                    MyTask task = new MyTask();
+                    Timer timer = new Timer();
+                    timer.schedule(task,1000);
                     break;
                 }
                 default:
@@ -403,7 +427,6 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     }
 
 
-
     @Override
     protected void onStart() {
         super.onStart();
@@ -461,8 +484,9 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
             mSelectedBTDevice = mAdapterConnect.getItem(position).mDevice;
             if (mBTConnectHelper.isBondedDevice(mSelectedBTDevice)) {
+
                 mConnector.start(null, mSelectedBTDevice);
-                showAutoConnectDialog(mSelectedBTDevice.getName());
+
             } else {
                 Toast.makeText(this, R.string.bt_pairing_request, Toast.LENGTH_SHORT).show();
                 mBTConnectHelper.selectedBTAddress(mSelectedBTDevice.getAddress());
@@ -564,7 +588,8 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                 mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_BT);
 
 //                Toast.makeText(this, "连接蓝牙中", Toast.LENGTH_SHORT).show();
-//                showAutoConnectDialog("");
+                showAutoConnectDialog(mSelectedBTDevice.getName());
+
                 break;
             case STATE_CONNECTED:
                 Toast.makeText(this, R.string.bt_connected, Toast.LENGTH_SHORT).show();
@@ -615,9 +640,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                     }
                 }).start();
 
-                if (mAutoConnectDialog.isShowing()) {
-                    mAutoConnectDialog.dismiss();
-                }
+//                mAutoConnectDialog.dismiss();
                 break;
             case STATE_DISCONNECTED:
 
@@ -629,9 +652,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                         hd.sendMessage(message); // 发送消息
                     }
                 }).start();
-                if (mAutoConnectDialog.isShowing()) {
-                    mAutoConnectDialog.dismiss();
-                }
+//                mAutoConnectDialog.dismiss();
                 Toast.makeText(this, R.string.wifi_p2p_disconnected, Toast.LENGTH_SHORT).show();
                 break;
         }

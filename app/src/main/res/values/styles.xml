@@ -18,4 +18,12 @@
         <item name="android:paddingLeft">0dp</item>
     </style>
 
+    <style name="itemSpinnerStyle2" parent="@android:style/Widget.TextView.SpinnerItem">
+        <item name="android:textColor">@color/grey</item>
+        <item name="android:textSize">34sp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:paddingLeft">0dp</item>
+    </style>
+
 </resources>

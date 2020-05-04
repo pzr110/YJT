@@ -65,8 +65,8 @@
     <string name="bt_connected">Connected BT</string>
     <string name="bt_disconnected">Disconnected BT</string>
     <string name="bt_not_found">Please, check FITT360 is sleep mode.</string>
-    <string name="bt_pairing_request">After a while, a Bluetooth pairing request will appear.\nPlease make sure your device is in pairing mode.</string>
-    <string name="bt_pairing_request_cancel">Please change to pairing mode and try again.</string>
+    <string name="bt_pairing_request">稍后，将出现蓝牙配对请求。\n请确保您的设备处于配对模式。</string>
+    <string name="bt_pairing_request_cancel">请更改设备配对模式后重试。</string>
 
     <string name="wifi_p2p">Wifi P2P</string>
     <string name="wifi_p2p_connecting">Connecting P2P</string>

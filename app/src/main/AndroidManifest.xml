@@ -79,6 +79,7 @@
                 android:resource="@xml/device_filter" />
         </activity>
         <activity android:name=".activity.user.UserMangerActivity" />
+        <activity android:name=".activity.user.LiveSettingActivity" />
 
         <service android:name=".service.RTMPStreamService"
             android:exported="false" >

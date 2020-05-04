@@ -1,7 +1,10 @@
 package com.linkflow.fitt360sdk.activity;
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.blankj.utilcode.util.ActivityUtils;
 import com.blankj.utilcode.util.BarUtils;
@@ -92,7 +96,26 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
     private ImageView mIvAlbum;
     private ImageView mIvUser;
+    public static final String ACTION_START_RTMP = "start_rtmp", ACTION_STOP_RTMP = "stop_rtmp";
 
+    private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action != null) {
+                if (action.equals(ACTION_STOP_RTMP)) {
+                    if (intent.getIntExtra("close", -1) == 10) {
+//                        mAdapter.changeStreamingState(false);
+                        mTimeUtils.stop();
+
+                    }
+                } else if (action.equals(ACTION_START_RTMP)) {
+//                    mAdapter.changeStreamingState(true);
+                    mTimeUtils.start();
+                }
+            }
+        }
+    };
 
 
     @Override
@@ -113,6 +136,10 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
         mSetManage.setListener(this);
         mSetManage.getRecordSetModel().setListener(this);
 
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ACTION_START_RTMP);
+        intentFilter.addAction(ACTION_STOP_RTMP);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, intentFilter);
 
         initViewId();
 
@@ -329,11 +356,12 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
     private void startStream() {
         listenerEnable = false;
-        mTimeUtils.start();
+//        mTimeUtils.start();
         isTimer = true;
 
-        String deviceRtmpUrl = SPUtils.getInstance().getString("deviceRtmpUrl", "rtmp://192.168.0.32:1935/ccmc/stream1");
+        String deviceRtmpUrl = SPUtils.getInstance().getString("deviceRtmpUrl", "rtmp://192.168.0.250:1935/ccmc/stream1");
 
+        Log.e("TAGLIVE","URL:"+deviceRtmpUrl);
         mNeckbandManager.getNotifyManage().getNotifyModel().agreementTemperLimit(mNeckbandManager.getAccessToken(), true, this);
         Intent intent = new Intent(LiveActivity.this, RTMPStreamService.class);
         intent.setAction(RTMPStreamService.ACTION_START_RTMP_STREAM);
@@ -364,7 +392,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
     private void stopStream() {
 
-        mTimeUtils.stop();
+//        mTimeUtils.stop();
 
         Intent intent = new Intent(LiveActivity.this, RTMPStreamService.class);
         intent.setAction(RTMPStreamService.ACTION_CANCEL_RTMP_STREAM);

@@ -243,18 +243,18 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     @Override
     public void alertTemperLimit(String type, int temper) {
         String message = null;
-//        switch (type) {
-//            case NotifyManage.TEMPER_ALERT_FIRST: message = "The neckband temperature has risen."; break;
-//            case NotifyManage.TEMPER_ALERT_SECOND:
-//                if (!mTemperLimitAlertDialog.isAdded()) {
-//                    mTemperLimitAlertDialog.showWithMessage(getSupportFragmentManager(),
-//                            "For your safety, we will exit the " + getWorkingState() + " after 5 minutes.\nDo you want to continue?");
-//                }
-//                break;
-//            case NotifyManage.TEMPER_ALERT_THIRD:
-//                message = "Exit the " + getWorkingState()  + " for your safety.\\nPlease rest for a while";
-//                break;
-//        }
+        switch (type) {
+            case NotifyManage.TEMPER_ALERT_FIRST: message = "注意：设备温度升高"; break;
+            case NotifyManage.TEMPER_ALERT_SECOND:
+                if (!mTemperLimitAlertDialog.isAdded()) {
+                    mTemperLimitAlertDialog.showWithMessage(getSupportFragmentManager(),
+                            "温度升高, 设备将在 " + getWorkingState() + " 5分钟后退出。\n是否继续?");
+                }
+                break;
+            case NotifyManage.TEMPER_ALERT_THIRD:
+                message = "退出 " + getWorkingState()  + " ，为了您的安全。\\n请稍后重试";
+                break;
+        }
         if (message != null) {
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         }

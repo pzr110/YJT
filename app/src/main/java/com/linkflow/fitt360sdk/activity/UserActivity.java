@@ -1,10 +1,12 @@
 package com.linkflow.fitt360sdk.activity;
 
+import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -15,9 +17,10 @@ import com.blankj.utilcode.util.ActivityUtils;
 import com.blankj.utilcode.util.BarUtils;
 import com.blankj.utilcode.util.SPUtils;
 import com.linkflow.fitt360sdk.R;
+import com.linkflow.fitt360sdk.activity.user.LiveSettingActivity;
 import com.linkflow.fitt360sdk.activity.user.UserMangerActivity;
 
-public class UserActivity extends AppCompatActivity implements View.OnClickListener {
+public class UserActivity extends BaseActivity implements View.OnClickListener {
 
     private YLCircleImageView mCivUserHead;
     private LinearLayout mLlUseManger;
@@ -30,9 +33,13 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
     private ImageView mIvAlbum;
     private ImageView mIvUser;
 
-
     private TextView mTvUserName;
     private TextView mTvLoginOut;
+
+    private Switch mSwitchHot;
+    private Switch mSwitchGps;
+
+
 
 
     @Override
@@ -45,6 +52,12 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
         initViewId();
 
         initInfo();
+
+        initListener();
+
+    }
+
+    private void initListener() {
 
     }
 
@@ -64,12 +77,20 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
         mImgRedDot = findViewById(R.id.img_red_dot);
         mIvAlbum = findViewById(R.id.iv_album);
         mIvUser = findViewById(R.id.iv_user);
+        mSwitchHot = findViewById(R.id.switch_hot);
+        mSwitchGps = findViewById(R.id.switch_gps);
 
         mTvUserName = findViewById(R.id.tv_user_name);
+
+        mImgMainBtn.bringToFront();
+        mImgRedDot.bringToFront();
 
         mTvLoginOut = findViewById(R.id.tv_login_out);
         mTvLoginOut.setOnClickListener(this);
         mLlUseManger.setOnClickListener(this);
+        mLlLiveSetting.setOnClickListener(this);
+        mImgMainBtn.setOnClickListener(this);
+        mIvAlbum.setOnClickListener(this);
     }
 
     @Override
@@ -83,6 +104,19 @@ public class UserActivity extends AppCompatActivity implements View.OnClickListe
             }
             case R.id.ll_use_manger: {
                 ActivityUtils.startActivity(UserMangerActivity.class);
+                break;
+            }
+            case R.id.ll_live_setting: {
+                ActivityUtils.startActivity(LiveSettingActivity.class);
+                break;
+            }
+            case R.id.img_main_btn: {
+                ActivityUtils.startActivity(MainActivity.class);
+                finish();
+                break;
+            }
+            case R.id.iv_album: {
+                ActivityUtils.startActivity(GalleryActivity.class);
                 break;
             }
 
