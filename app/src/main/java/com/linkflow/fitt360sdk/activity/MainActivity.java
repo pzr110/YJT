@@ -4,13 +4,16 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.icu.text.TimeZoneFormat;
+import android.location.LocationManager;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.os.Build;
@@ -20,13 +23,18 @@ import android.os.Message;
 import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,6 +54,7 @@ import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.adapter.BTDeviceRecyclerAdapter;
 import com.linkflow.fitt360sdk.adapter.MainRecyclerAdapter;
 import com.linkflow.fitt360sdk.dialog.RTMPStreamerDialog;
+import com.linkflow.fitt360sdk.helper.TimeUtils;
 import com.linkflow.fitt360sdk.item.BTItem;
 import com.linkflow.fitt360sdk.item.BaseBean;
 import com.linkflow.fitt360sdk.item.RtmpBean;
@@ -80,6 +89,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     public static final String ACTION_START_RTMP = "start_rtmp", ACTION_STOP_RTMP = "stop_rtmp";
     private static final int PERMISSION_CALLBACK = 366;
+    public static final int REQUEST_ENABLE_BT = 1;
 
     private RTSPToRTMPConverter mRSToRMConverter;
     private RecordModel mRecordModel;
@@ -121,8 +131,62 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     private ImageView mIvAlbum;
     private ImageView mIvUser;
 
+    private BluetoothStateBroadcastReceive mBluetoothStateBroadcastReceive;
 
+    private boolean isBlueState;
+
+    private AlertDialog mDialogState;
     //////////////////////////////
+
+    class BluetoothStateBroadcastReceive extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            switch (action) {
+                case BluetoothDevice.ACTION_ACL_CONNECTED:
+                    Toast.makeText(context, "蓝牙设备:" + device.getName() + "已链接", Toast.LENGTH_SHORT).show();
+                    break;
+                case BluetoothDevice.ACTION_ACL_DISCONNECTED:
+                    Toast.makeText(context, "蓝牙设备:" + device.getName() + "已断开", Toast.LENGTH_SHORT).show();
+                    break;
+                case BluetoothAdapter.ACTION_STATE_CHANGED:
+                    int blueState = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, 0);
+                    switch (blueState) {
+                        case BluetoothAdapter.STATE_OFF:
+                            isBlueState = false;
+                            Toast.makeText(context, "蓝牙已关闭", Toast.LENGTH_SHORT).show();
+                            break;
+                        case BluetoothAdapter.STATE_ON:
+                            isBlueState = true;
+                            Toast.makeText(context, "蓝牙已开启", Toast.LENGTH_SHORT).show();
+                            break;
+                    }
+                    break;
+            }
+        }
+    }
+
+    private void registerBluetoothReceiver() {
+        if (mBluetoothStateBroadcastReceive == null) {
+            mBluetoothStateBroadcastReceive = new BluetoothStateBroadcastReceive();
+        }
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        intentFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        intentFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        intentFilter.addAction("android.bluetooth.BluetoothAdapter.STATE_OFF");
+        intentFilter.addAction("android.bluetooth.BluetoothAdapter.STATE_ON");
+        registerReceiver(mBluetoothStateBroadcastReceive, intentFilter);
+    }
+
+    private void unregisterBluetoothReceiver() {
+        if (mBluetoothStateBroadcastReceive != null) {
+            unregisterReceiver(mBluetoothStateBroadcastReceive);
+            mBluetoothStateBroadcastReceive = null;
+        }
+    }
 
 
     private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
@@ -157,8 +221,14 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     private boolean isAutoConnect = false;
 
+    private BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+
+    //创建WifiManager对象
+    private WifiManager wifiManager;
 
     @Override
+
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         hideHeader();
         super.onCreate(savedInstanceState);
@@ -171,12 +241,15 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                     Manifest.permission.ACCESS_WIFI_STATE, Manifest.permission.CHANGE_WIFI_STATE,
                     Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_NETWORK_STATE}, PERMISSION_CALLBACK);
+                    Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.WRITE_SECURE_SETTINGS}, PERMISSION_CALLBACK);
         }
         initLogin();
 //        getRtmpUrl();
         BarUtils.setStatusBarColor(this, Color.TRANSPARENT);
         initViewId();
+        registerBluetoothReceiver(); // 注册蓝牙广播
+        //以getSystemService取得WIFI_SERVICE 然后通过if语句来判断程序的wifi状态是否打开或者打开中，这样边可以显示提示信息
+        wifiManager = (WifiManager) this.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
         mRSToRMConverter = RTSPToRTMPConverter.getInstance();
         mRTMPStreamerDialog = new RTMPStreamerDialog();
@@ -234,19 +307,20 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
         mAdapterConnect.addItems(mBTConnectHelper.getBondedBTList());
 
-        ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList();
-        for (int i = 0; i < bondedBTList.size(); i++) {
-
-            if (mBTConnectHelper.isBondedDevice(bondedBTList.get(i))) {
-                Log.e("TAGOld", "发现旧设备");
-                BluetoothDevice bluetoothDevice = bondedBTList.get(i);
-                mSelectedBTDevice = bluetoothDevice;
-//                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
-                mConnector.start(null, bondedBTList.get(i));
-                isAutoConnect = true;
-                break;
-            }
-        }
+        /// 自动重连
+//        ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList();
+//        for (int i = 0; i < bondedBTList.size(); i++) {
+//
+//            if (mBTConnectHelper.isBondedDevice(bondedBTList.get(i))) {
+//                Log.e("TAGOld", "发现旧设备");
+//                BluetoothDevice bluetoothDevice = bondedBTList.get(i);
+//                mSelectedBTDevice = bluetoothDevice;
+////                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
+//                mConnector.start(null, bondedBTList.get(i));
+//                isAutoConnect = true;
+//                break;
+//            }
+//        }
         ///////////////////////////////////////////
     }
 
@@ -292,7 +366,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 //        }
 //    };
 
-    class MyTask extends  TimerTask{
+    class MyTask extends TimerTask {
 
         @Override
         public void run() {
@@ -309,20 +383,20 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             super.handleMessage(msg);
             switch (msg.what) {
                 case 1: // 接受到消息之后，对UI控件进行修改
-                    mTextView.setText("开始连接"+mSelectedBTDevice.getName());
+                    mTextView.setText("开始连接" + mSelectedBTDevice.getName());
                     break;
                 case 2: {
-                    mTextView.setText("已成功连接"+mSelectedBTDevice.getName());
+                    mTextView.setText("已成功连接" + mSelectedBTDevice.getName());
                     MyTask task = new MyTask();
                     Timer timer = new Timer();
-                    timer.schedule(task,1000);
+                    timer.schedule(task, 1000);
                     break;
                 }
                 case 3: {
-                    mTextView.setText("连接"+mSelectedBTDevice.getName()+"失败！请重试");
+                    mTextView.setText("连接" + mSelectedBTDevice.getName() + "失败！请重试");
                     MyTask task = new MyTask();
                     Timer timer = new Timer();
-                    timer.schedule(task,1000);
+                    timer.schedule(task, 1000);
                     break;
                 }
                 default:
@@ -404,6 +478,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         });
     }
 
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -419,10 +494,95 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             }
         }
 
-        Log.e("ResFITT", "ReDevice:" + mSelectedBTDevice);
 
-//        getRtmpUrl();
+//        if (blueState && oPenGps && wifiEnabled) {
+//            Log.e("State", "已经全部打开");
+//            mDialogState.dismiss();
+//        } else {
+//            mDialogState.show();
+//            Log.e("State", "AAA");
+//        }
 
+    }
+
+
+    private void showDeviceStateDialog(boolean blueState, boolean oPenGps, boolean wifiEnabled) {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_phone_state, null, false);
+        mDialogState = new AlertDialog.Builder(this).setView(view).create();
+//        mDialogState.setCancelable(false);
+        Window window = mDialogState.getWindow();
+        //这一句消除白块
+        window.setBackgroundDrawable(new BitmapDrawable());
+
+        TextView mTvHelp = view.findViewById(R.id.tv_help);
+        mTvHelp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ActivityUtils.startActivity(HelpActivity.class);
+            }
+        });
+        Switch mSwitchBlue = view.findViewById(R.id.switch_blue);
+        Switch mSwitchWifi = view.findViewById(R.id.switch_wifi);
+        Switch mSwitchGPS = view.findViewById(R.id.switch_gps);
+        mSwitchBlue.setChecked(blueState);
+        mSwitchWifi.setChecked(wifiEnabled);
+        mSwitchGPS.setChecked(oPenGps);
+
+        if (blueState && oPenGps && wifiEnabled) {
+            Log.e("State", "已经全部打开");
+        }
+
+        mSwitchBlue.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+//                    if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
+//
+//                        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//
+//                        startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+//                    }
+                    /*隐式打开蓝牙*/
+                    if (!mBluetoothAdapter.isEnabled()) {
+                        mBluetoothAdapter.enable();
+                    }
+                } else {
+                    mBluetoothAdapter.disable();
+                }
+            }
+        });
+
+        mDialogState.show();
+
+//        dialog.getWindow().setLayout((ScreenUtils.getScreenWidth() /  3), LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        // 设置dialog的宽度
+        WindowManager m = getWindowManager();
+        Display d = m.getDefaultDisplay(); // 为获取屏幕宽、高
+        WindowManager.LayoutParams params = mDialogState.getWindow().getAttributes();
+        params.width = (int) ((d.getWidth()) * 0.3);
+        params.height = (int) ((d.getHeight()) * 0.9);
+        mDialogState.getWindow().setAttributes(params);
+    }
+
+    /**
+     * 判断GPS是否开启，GPS或者AGPS开启一个就认为是开启的
+     *
+     * @param context
+     * @return true 表示开启
+     */
+    public static final boolean isOPenGps(final Context context) {
+        LocationManager locationManager
+                = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        // 通过GPS卫星定位，定位级别可以精确到街（通过24颗卫星定位，在室外和空旷的地方定位准确、速度快）
+        boolean gps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        // 通过WLAN或移动网络(3G/2G)确定的位置（也称作AGPS，辅助GPS定位。主要用于在室内或遮盖物（建筑群或茂密的深林等）密集的地方定位）
+        boolean network = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        if (gps || network) {
+            return true;
+        }
+
+        return false;
     }
 
 
@@ -430,6 +590,20 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     protected void onStart() {
         super.onStart();
         Log.e("ResFITT", "StartDevice:" + mSelectedBTDevice);
+
+        Log.e("TAGDDG", "Asss");
+        boolean blueState = mBluetoothAdapter.isEnabled(); // 蓝牙打开状态
+        boolean oPenGps = isOPenGps(getApplicationContext()); // GPS 状态
+        boolean wifiEnabled = wifiManager.isWifiEnabled(); // WIFI状态
+        showDeviceStateDialog(blueState, oPenGps, wifiEnabled);
+        if (blueState && oPenGps && wifiEnabled) {
+            Log.e("State", "已经全部打开");
+            mDialogState.dismiss();
+        } else {
+//            mDialogState.show();
+            ToastUtils.showShort("请打开相关设置");
+            Log.e("State", "AAA");
+        }
 
     }
 
@@ -441,6 +615,8 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                 mRSToRMConverter.stop();
             }
         }
+
+        unregisterBluetoothReceiver();
 //        mNeckbandManager.getPreviewModel().getMuteState();
 //        if ()
 //        mNeckbandManager.getPreviewModel().activateRTSP(mNeckbandManager.getAccessToken(), false);

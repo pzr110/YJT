@@ -59,6 +59,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         boolean login = SPUtils.getInstance().getBoolean("login");
         if (login) {
             ActivityUtils.startActivity(MainActivity.class);
+            finish();
         }
     }
 
