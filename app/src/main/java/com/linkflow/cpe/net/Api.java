@@ -3,6 +3,7 @@ package com.linkflow.cpe.net;
 import android.util.Log;
 
 import com.github.simonpercic.oklog3.OkLogInterceptor;
+import com.linkflow.cpe.App;
 import com.linkflow.cpe.Constans;
 import com.linkflow.cpe.TokenUtils;
 import com.zhy.http.okhttp.utils.L;
@@ -26,11 +27,16 @@ public class Api {
     private static OkHttpClient okHttpClient = null;
     public static int TIME_OUT = 20;
 
+
     private static boolean checkNull() {
         return mRetrofit == null;
     }
 
+
     private static void init() {
+//        String mConstans = new Constans().getBaseUrl();
+        Log.e("BASEURL","URLAPI:"+App.BaseUrl);
+
         OkLogInterceptor okLogInterceptor = OkLogInterceptor.builder().build();
 
         okHttpClient = new OkHttpClient.Builder()
@@ -40,16 +46,16 @@ public class Api {
                     public Response intercept(Chain chain) throws IOException {
 
 
-                        Log.e("TAGPZR","Bool："+ TokenUtils.hasToken());
+                        Log.e("TAGPZR", "Bool：" + TokenUtils.hasToken());
 
                         if (TokenUtils.hasToken()) {
                             Request newRequest = chain.request().newBuilder()
                                     .header("x-access-token", TokenUtils.getToken())
 //                                    .header("x-access-appid", "ty9fd2848a039abbbb")
-                                    .header("x-access-user-id", TokenUtils.hasUserId()? TokenUtils.getUserId():"0")
+                                    .header("x-access-user-id", TokenUtils.hasUserId() ? TokenUtils.getUserId() : "0")
                                     .build();
-                            Log.e("TAGPZR","HRarAA");
-                            L.e("X-Access-Token:"+TokenUtils.getToken());
+                            Log.e("TAGPZR", "HRarAA");
+                            L.e("X-Access-Token:" + TokenUtils.getToken());
                             Response respnse = chain.proceed(newRequest);
                             return respnse;
                         } else {
@@ -65,7 +71,7 @@ public class Api {
                 .connectTimeout(TIME_OUT, TimeUnit.SECONDS)
                 .build();
         mRetrofit = new Retrofit.Builder()
-                .baseUrl(Constans.BaseUrl)
+                .baseUrl(App.BaseUrl)
                 .client(okHttpClient)
                 .addConverterFactory(CustomGsonConverterFactory.create())
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())

@@ -55,7 +55,7 @@ dependencies {
     implementation 'com.github.pedroSG94.metadata-spherical-injector:metadataphoto:1.0'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
     // SDK
-    implementation files('libs/LinkflowSDK_beta_0.0.1_gcube.aar')
+    implementation files('libs/LinkflowSDK_beta_0.0.3.aar')
 /////////////////////////////////////////////
     // Blankj
     implementation 'com.blankj:utilcode:1.28.0'

@@ -87,8 +87,8 @@ public class UserMangerActivity extends AppCompatActivity {
                         String title = bean.getData().getTitle();
                         String stream_url = bean.getData().getStream_url();
                         Log.e("URL", "URL" + stream_url);
-                        SPUtils.getInstance().put("deviceTitle", title);
-                        SPUtils.getInstance().put("deviceRtmpUrl", stream_url);
+//                        SPUtils.getInstance().put("deviceTitle", title);
+//                        SPUtils.getInstance().put("deviceRtmpUrl", stream_url);
 
                         getInfo(title,stream_url);
                     }

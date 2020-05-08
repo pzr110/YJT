@@ -25,6 +25,8 @@ public class App extends Application {
     public static App INS;
     private static final Handler sHandler = new Handler();
 
+    public static String BaseUrl ="http://183.220.194.106:38080/cpe/";
+
     // Singleton pattern to get unique MyApplication instance
     public static App getInstance() {
         if (null == INS) {
@@ -43,6 +45,8 @@ public class App extends Application {
 //        Log.e(true, true, logPath, true);
         testGetHeap();
     }
+
+
 
     private void testGetHeap()
     {
@@ -76,7 +80,7 @@ public class App extends Application {
                     @Override
                     public void onFailure(UpdateError error) {
                         if (error.getCode() != CHECK_NO_NEW_VERSION) {          //Dealing with different errors
-                            Toast.makeText(getApplicationContext(),error.toString(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(),error.toString(),Toast.LENGTH_SHORT).show();
                         }
                     }
                 })

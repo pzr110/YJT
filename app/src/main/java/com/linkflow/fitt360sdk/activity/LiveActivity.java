@@ -28,14 +28,20 @@ import com.blankj.utilcode.util.ActivityUtils;
 import com.blankj.utilcode.util.BarUtils;
 import com.blankj.utilcode.util.SPUtils;
 import com.blankj.utilcode.util.ToastUtils;
+import com.linkflow.cpe.App;
+import com.linkflow.cpe.net.Api;
+import com.linkflow.cpe.net.BaseSubscriber;
 import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.dialog.RTMPStreamerDialog;
 import com.linkflow.fitt360sdk.helper.TimeUtils;
 import com.linkflow.fitt360sdk.helper.TimerHelper;
+import com.linkflow.fitt360sdk.item.BaseBean;
+import com.linkflow.fitt360sdk.item.RtmpBean;
 import com.linkflow.fitt360sdk.service.RTMPStreamService;
 import com.wang.avi.AVLoadingIndicatorView;
 
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.Timer;
 
 import app.library.linkflow.manager.StoredDataManager;
@@ -50,6 +56,8 @@ import app.library.linkflow.manager.neckband.NeckbandManager;
 import app.library.linkflow.manager.neckband.SetManage;
 import app.library.linkflow.manager.neckband.SettingListener;
 import app.library.linkflow.rtmp.RTSPToRTMPConverter;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Listener,
         SetManage.Listener, SettingListener {
@@ -103,6 +111,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     private Switch mSwitchAuto;
 
     private boolean isAutoBit = false;
+    private String mStream_url;
 
 
     private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
@@ -114,10 +123,13 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                     if (intent.getIntExtra("close", -1) == 10) {
 //                        mAdapter.changeStreamingState(false);
                         mTimeUtils.stop();
+                        changeLiveEnable(false);
                     }
                 } else if (action.equals(ACTION_START_RTMP)) {
 //                    mAdapter.changeStreamingState(true);
                     mTimeUtils.start();
+                    changeLiveEnable(true);
+
                 }
             }
         }
@@ -142,6 +154,8 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
         mSetManage.setListener(this);
         mSetManage.getRecordSetModel().setListener(this);
 
+        getRtmpUrl();
+
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_START_RTMP);
         intentFilter.addAction(ACTION_STOP_RTMP);
@@ -149,15 +163,53 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
         initViewId();
 
-        initListener();
 
         getPower();
         Log.e("TAGTAG", "Status" + mConverter.getSentByteAmount());
 
 
-
-
     }
+
+    private void getRtmpUrl() {
+        Log.e("TAGGYURL","URL:"+ App.BaseUrl);
+        HashMap<String, Object> params = new HashMap<>();
+        Api.getRetrofit().postRtmpUrl(params)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new BaseSubscriber<BaseBean<RtmpBean>>(this) {
+                    @Override
+                    public void onStart() {
+                        super.onStart();
+                        Log.e("TAG", "onStart");
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        super.onCompleted();
+                        Log.e("TAG", "onCompleted");
+                    }
+
+
+                    @Override
+                    public void onError(Throwable e) {
+                        super.onError(e);
+                        Log.e("TAGASDSA", "onErrorAS" + e.getMessage());
+                    }
+
+                    @Override
+                    public void onNext(BaseBean<RtmpBean> bean) {
+                        super.onNext(bean);
+                        Log.e("TAG", "onNext");
+                        String title = bean.getData().getTitle();
+                        mStream_url = bean.getData().getStream_url();
+                        Log.e("PZRURL", "URL" + mStream_url);
+
+                        initListener();
+
+                    }
+                });
+    }
+
 
     private void getPower() {
 
@@ -239,7 +291,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
     private void initListener() {
         boolean connected = mNeckbandManager.getConnectStateManage().isConnected();
-        if (connected) {
+        if (connected && mStream_url != null) {
             mImgMainBtn.setEnabled(true);
             mImgMainBtn.setBackgroundResource(R.drawable.shape_circle_gradient);
             mImgRedDot.setBackgroundResource(R.drawable.shape_accent_white_circle);
@@ -298,7 +350,6 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 // Another interface callback
-                ToastUtils.showShort("ASSDD");
             }
         });
 
@@ -321,7 +372,6 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 // Another interface callback
-                ToastUtils.showShort("ASSDD");
             }
         });
 
@@ -371,6 +421,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                     mSpUpload.setEnabled(false);
                 } else {
                     isAutoBit = false;
+                    mSpUpload.setEnabled(true);
                 }
             }
         });
@@ -380,16 +431,14 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
 
     private void startStream() {
         listenerEnable = false;
-//        mTimeUtils.start();
         isTimer = true;
+        mNeckbandManager.getNotifyManage().getNotifyModel().agreementTemperLimit(mNeckbandManager.getAccessToken(), true, this);
 
-        String deviceRtmpUrl = SPUtils.getInstance().getString("deviceRtmpUrl", "rtmp://192.168.0.250:1935/ccmc/stream1");
-
-        Log.e("TAGLIVE", "URL:" + deviceRtmpUrl);
+        Log.e("TAGLIVE", "URL:" + mStream_url);
 //        mNeckbandManager.getNotifyManage().getNotifyModel().agreementTemperLimit(mNeckbandManager.getAccessToken(), true, this);
         Intent intent = new Intent(LiveActivity.this, RTMPStreamService.class);
         intent.setAction(RTMPStreamService.ACTION_START_RTMP_STREAM);
-        intent.putExtra("rtmp_url", deviceRtmpUrl);
+        intent.putExtra("rtmp_url", mStream_url);
         intent.putExtra("rtmp_bitrate_auto", isAutoBit);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -400,14 +449,6 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
             startService(intent);
         }
 
-//        if (mRecordTime != 0) {
-//            mTvLiveTime.setBase(mTvLiveTime.getBase() + (SystemClock.elapsedRealtime() - mRecordTime));
-//        } else {
-//            mTvLiveTime.setBase(SystemClock.elapsedRealtime());
-//            int hour = (int) ((SystemClock.elapsedRealtime() - mTvLiveTime.getBase()) / 1000 / 60);
-//            mTvLiveTime.setFormat("0" + String.valueOf(hour) + ":%s");
-//        }
-//        mTvLiveTime.start();
 
         Log.e("TAGTAG", "Status" + mConverter.getSentByteAmount());
 
@@ -427,7 +468,6 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
         }
         mRSToRMConverter.exit();
 //        mTvLiveTime.stop();
-        mRecordTime = SystemClock.elapsedRealtime();
 
     }
 
@@ -466,7 +506,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
             case R.id.img_main_btn: {
                 if (System.currentTimeMillis() - mStreamingClickedTime > 1500) {
                     mStreamingClickedTime = System.currentTimeMillis();
-                    if (!isPushStream) {
+                    if (!mRSToRMConverter.isRTMPWorking()) {
                         startStream();
                         isPushStream = !isPushStream;
                         changeLiveEnable(isPushStream);
@@ -497,15 +537,31 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                 ActivityUtils.startActivity(UserActivity.class);
 
             }
+            case R.id.base_dialog_agree:{
+                mNeckbandManager.getNotifyManage().getNotifyModel().agreementTemperLimit(mNeckbandManager.getAccessToken(), true, this);
+                Log.e("TAGAgree","Agree");
+                break;
+            }
+            case R.id.base_dialog_disagree:{
+                mTemperLimitAlertDialog.dismiss();
+                if (mNeckbandManager.isRecording()) {
+                    mNeckbandManager.getRecordModel().actionRecord(mNeckbandManager.getAccessToken(), false);
+                    mNeckbandManager.setRecordState(false);
+                }
+                mTemperLimitAlertDialog.dismiss();
+                Log.e("TAGAgree","disAgree");
+
+                break;
+            }
         }
 
 
-        if (view.getId() == R.id.base_dialog_agree) {
-            startStream();
-            mRTMPStreamerDialog.dismissAllowingStateLoss();
-        } else if (view.getId() == R.id.base_dialog_disagree) {
-            mRTMPStreamerDialog.dismissAllowingStateLoss();
-        }
+//        if (view.getId() == R.id.base_dialog_agree) {
+//            startStream();
+//            mRTMPStreamerDialog.dismissAllowingStateLoss();
+//        } else if (view.getId() == R.id.base_dialog_disagree) {
+//            mRTMPStreamerDialog.dismissAllowingStateLoss();
+//        }
     }
 
 
@@ -535,10 +591,10 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     @Override
     public void completedSetBaseSetting(boolean success, BaseSetItem item) { // 默认设置
         if (success && item instanceof RecordSetItem) {
-            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_RECORD_WIDTH, mVideoWidth);
-            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_RECORD_HEIGHT, mVideoHeight);
-            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_BITRATE, ((RecordSetItem) item).mBitrate);
-            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_FPS, ((RecordSetItem) item).mFPS);
+            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_RECORD_WIDTH, 1920);
+            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_RECORD_HEIGHT, 1080);
+            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_BITRATE, 20);
+            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_FPS, 24);
         }
     }
 

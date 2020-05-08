@@ -75,8 +75,8 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
         mPreviewModel = new PreviewModel(new PreviewModel.Listener() {
             @Override
             public void completedControlRTSP(boolean success, boolean activated) {
-                if(success) {
-                    if(activated) {
+                if (success) {
+                    if (activated) {
                         Log.d(TAG, "completedControlRTSP success. startRTSPDecoder");
                         mConverter.startRTSPDecoder(NeckbandRestApiClient.getRTSPUrl(), false);
                     } else
@@ -114,7 +114,7 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                             + currentBitrate + "mbps -> " + nextBitrate + "mbps", Toast.LENGTH_LONG).show();
                 } else if (msg.what == MSG_RTSP_CHECK_STARTED) {
                     Log.d(TAG, "called MSG_RTSP_CHECK_STARTED");
-                    if(!isRTSPConnected) {
+                    if (!isRTSPConnected) {
                         Log.d(TAG, "start activateRTSP");
                         mPreviewModel.activateRTSP(mNeckbandManager.getAccessToken(), true);
                     }
@@ -172,7 +172,7 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
 //                            mTimerHelper.start();
                             LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(LiveActivity.ACTION_START_RTMP));
                         } else {
-                            stopForeground(true);
+//                            stopForeground(true);
                             stopSelf();
                         }
                     }
@@ -181,8 +181,8 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                     Intent closeIntent = new Intent(LiveActivity.ACTION_STOP_RTMP);
                     closeIntent.putExtra("close", intent.getIntExtra("close", -1));
                     LocalBroadcastManager.getInstance(this).sendBroadcast(closeIntent);
-
-                    stopForeground(true);
+                    Log.e("STOP", "ERRORAAA");
+//                    stopForeground(true);
                     stopSelf();
                     break;
             }
@@ -194,7 +194,7 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
-        if(adaptiveStreamingTimer != null) {
+        if (adaptiveStreamingTimer != null) {
             adaptiveStreamingTimer.cancel();
             adaptiveStreamingTimer = null;
         }
@@ -250,24 +250,28 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
         switch (code) {
             case RTSP_NODATA:
                 // Skip rtsp no data during bitrate change. This may cause unexpected rtsp connection error
-                if(System.currentTimeMillis() < lastBitrateChangeExecutionTime + 10000/*10 secs*/) {
+                if (System.currentTimeMillis() < lastBitrateChangeExecutionTime + 10000/*10 secs*/) {
                     Log.e(TAG, "No data from FITT360, but skip on this time since the device is during bitrate changing");
                     return;
                 }
-                str = "No data from FITT360\nApp is now trying to re-open streaming";
+                str = "无法发送数据\n请检查设备是否异常";
                 Log.e(TAG, str);
                 Toast.makeText(this, str, Toast.LENGTH_LONG).show();
                 mRTSPCheckHandler.sendEmptyMessageDelayed(MSG_RTSP_RECONNECT, 0);
+                closeService();
                 break;
             case RTMP_NODATA:
                 // Do nothing, just information
                 // there is risk to handle rtmp flow here due to thread race condition
                 // The error handler(try reconnect when caught socket broken) itself is enough
-                str = "No data output to server\nCheck network or server";
+                str = "无法发送数据\n请检查网络或RTMP服务";
                 Log.e(TAG, str);
                 Toast.makeText(this, str, Toast.LENGTH_LONG).show();
+                closeService();
                 break;
             case RTSP_INTERNAL_ERROR:
+                Log.e("STOP", "ERRORBBB");
+
 //                str = "直播停止\nNetwork internal error happened during data transmission";
                 str = "直播停止";
                 Log.e(TAG, str);
@@ -287,7 +291,7 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
     public void updateTime(String time) {
         // set text color for status display on service dialog
         int statusColor;
-        if(currentStatus == CONNECTED) {
+        if (currentStatus == CONNECTED) {
             statusColor = Color.RED;
         } else if (currentStatus == RECONNECTING) {
             statusColor = Color.BLUE;
@@ -305,7 +309,7 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
         intent.putExtra("close", 10);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
-        stopForeground(true);
+//        stopForeground(true);
         stopSelf();
     }
 
@@ -329,30 +333,29 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
             @Override
             public void run() {
                 // pause this when bitrate control change, rtsp restart by other process, rtmp is disconnected
-                if(pauseBitrateControl || !isRTSPConnected || currentStatus != CONNECTED) {
+                if (pauseBitrateControl || !isRTSPConnected || currentStatus != CONNECTED) {
                     return;
                 }
 
                 boolean forceBitrateDown = false;
 
-                int frameCountInQueue = (int)mConverter.getFrameCountInQueue();
+                int frameCountInQueue = (int) mConverter.getFrameCountInQueue();
                 Log.d(TAG, "frameCountInQueue : " + frameCountInQueue);
                 if (frameCountInQueue > previousFrameCount) {
                     frameQueueIncreased++;
-                }
-                else if(frameCountInQueue < previousFrameCount){
+                } else if (frameCountInQueue < previousFrameCount) {
                     frameQueueIncreased--;
                 }
-                if(frameQueueIncreased < 0)
+                if (frameQueueIncreased < 0)
                     frameQueueIncreased = 0;
 
                 previousFrameCount = frameCountInQueue;
 
-                if(!nonZeroFrameStarted && frameCountInQueue > 0)
+                if (!nonZeroFrameStarted && frameCountInQueue > 0)
                     nonZeroFrameStarted = true;
 
-                if(nonZeroFrameStarted) {
-                    if(queue.size() == ADAPTIVE_RTMP_QUEUE_SIZE_CRITERIA) {
+                if (nonZeroFrameStarted) {
+                    if (queue.size() == ADAPTIVE_RTMP_QUEUE_SIZE_CRITERIA) {
                         sumQueue -= queue.poll();
                     }
 
@@ -360,13 +363,13 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                     sumQueue += frameCountInQueue;
                 }
 
-                if(frameQueueIncreased > 12)
+                if (frameQueueIncreased > 12)
                     // normal criteria
                     forceBitrateDown = true;
-                else if(queue.size() > 5 && (sumQueue / queue.size() > 1350 /*30fps * 5 secs = 150 frame margin*/))
+                else if (queue.size() > 5 && (sumQueue / queue.size() > 1350 /*30fps * 5 secs = 150 frame margin*/))
                     // when reaches to overflow
                     forceBitrateDown = true;
-                else if(queue.size() == ADAPTIVE_RTMP_QUEUE_SIZE_CRITERIA && (sumQueue / queue.size()) > 200)
+                else if (queue.size() == ADAPTIVE_RTMP_QUEUE_SIZE_CRITERIA && (sumQueue / queue.size()) > 200)
                     // when high buffer state last long
                     forceBitrateDown = true;
 
@@ -388,10 +391,10 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                     //decrease bitrate
                     int currentBitrate = NeckbandManager.getInstance().getSetManage().getRecordSetItem().mBitrate;
                     int downFactor = 5;
-                    if(bitrateInitiallyStabilized)
+                    if (bitrateInitiallyStabilized)
                         downFactor = 3;
                     int newBitrate = Math.max(currentBitrate - downFactor, 5);
-                    if(currentBitrate > newBitrate) {
+                    if (currentBitrate > newBitrate) {
                         mNeckbandManager.getSetManage().setBitrate(mNeckbandManager.getAccessToken(), newBitrate);
                         pauseBitrateControl = true;
                         lastBitrateChangeExecutionTime = System.currentTimeMillis();
@@ -416,7 +419,7 @@ public class RTMPStreamService extends Service implements RTSPToRTMPConverter.Li
                     //increase bitrate
                     int currentBitrate = NeckbandManager.getInstance().getSetManage().getRecordSetItem().mBitrate;
                     int newBitrate = Math.min(currentBitrate + 1, 30);
-                    if(currentBitrate < newBitrate) {
+                    if (currentBitrate < newBitrate) {
                         mNeckbandManager.getSetManage().setBitrate(mNeckbandManager.getAccessToken(), newBitrate);
                         pauseBitrateControl = true;
                         lastBitrateChangeExecutionTime = System.currentTimeMillis();

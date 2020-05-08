@@ -52,6 +52,7 @@ import com.blankj.utilcode.util.BarUtils;
 import com.blankj.utilcode.util.SPUtils;
 import com.blankj.utilcode.util.ScreenUtils;
 import com.blankj.utilcode.util.ToastUtils;
+import com.linkflow.cpe.App;
 import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.adapter.BTDeviceRecyclerAdapter;
 import com.linkflow.fitt360sdk.adapter.MainRecyclerAdapter;
@@ -62,6 +63,7 @@ import com.linkflow.fitt360sdk.item.BaseBean;
 import com.linkflow.fitt360sdk.item.RtmpBean;
 import com.linkflow.fitt360sdk.service.RTMPStreamService;
 import com.wang.avi.AVLoadingIndicatorView;
+import com.xuexiang.xupdate.XUpdate;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
@@ -70,6 +72,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import app.library.linkflow.ConnectManager;
+import app.library.linkflow.Constant;
 import app.library.linkflow.connect.BTConnectHelper;
 import app.library.linkflow.connect.ConnectHelper;
 import app.library.linkflow.connect.WifiConnectHelper;
@@ -139,6 +142,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     private boolean isBlueState;
 
     private AlertDialog mDialogState;
+    private boolean mIsAllOpen;
     //////////////////////////////
 
     class BluetoothStateBroadcastReceive extends BroadcastReceiver {
@@ -651,6 +655,8 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         super.onStart();
         Log.e("ResFITT", "StartDevice:" + mSelectedBTDevice);
 
+        checkAppVersion();
+
         Log.e("TAGDDG", "Asss");
         boolean blueState = mBluetoothAdapter.isEnabled(); // 蓝牙打开状态
         boolean oPenGps = isOPenGps(getApplicationContext()); // GPS 状态
@@ -659,38 +665,28 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         if (blueState && oPenGps && wifiEnabled) {
             Log.e("State", "已经全部打开");
             mDialogState.dismiss();
-            autoConnect();
+//            autoConnect();
+            mIsAllOpen = true;
         } else {
 //            mDialogState.show();
             ToastUtils.showShort("请打开相关设置");
             Log.e("State", "AAA");
+            mIsAllOpen = false;
         }
+
 
 
     }
 
-    int iCoent = 0;
-
-    private void autoConnect() {
-        Log.e("Count", "Coutn" + iCoent);
-        iCoent++;
-
-        /// 自动重连
-        ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList();
-        for (int i = 0; i < bondedBTList.size(); i++) {
-
-            if (mBTConnectHelper.isBondedDevice(bondedBTList.get(i))) {
-                Log.e("TAGOld", "发现旧设备");
-                BluetoothDevice bluetoothDevice = bondedBTList.get(i);
-                int bondState = bluetoothDevice.getBondState();
-                mSelectedBTDevice = bluetoothDevice;
-//                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
-                mConnector.start(null, bondedBTList.get(i));
-                isAutoConnect = true;
-                break;
-            }
-        }
+    private void checkAppVersion() {
+        String APPUpdateUrl = App.BaseUrl + "Update/CheckUpdate";
+        XUpdate.newBuild(this)
+                .updateUrl(APPUpdateUrl)
+                .update();
     }
+
+
+
 
 
     @Override
@@ -737,7 +733,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         BTItem item = mAdapterConnect.getItem(position);
         if (item.mState == BTItem.STATE_NEAR) {
             mAdapterConnect.checked(mBeforeClickedItemPosition, position);
-            Log.e("TAGDDD","clickedItemConnect");
+            Log.e("TAGDDD", "clickedItemConnect");
             mBeforeClickedItemPosition = position;
             mProgressBar.setVisibility(View.GONE);
             mBTConnectHelper.disconnect();
@@ -764,9 +760,37 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     }
 
+    private void autoConnect(BluetoothDevice device) {
+        if (mIsAllOpen){
+            ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList(); // 配对设备
+            String foundAddress = device.getAddress(); // 发现设备地址
+
+            for (int i = 0; i < bondedBTList.size(); i++) {
+                String address = bondedBTList.get(i).getAddress(); // 配对设备地址
+                if (foundAddress.equals(address)) {
+                    Log.e("TAGOld", "发现旧设备");
+                    BluetoothDevice bluetoothDevice = bondedBTList.get(i);
+                    int bondState = bluetoothDevice.getBondState();
+                    mSelectedBTDevice = bluetoothDevice;
+//                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
+                    mConnector.start(null, bondedBTList.get(i));
+                    isAutoConnect = true;
+                    break;
+                }else {
+                    ToastUtils.showShort("未发现可用设备");
+                }
+            }
+        }
+    }
+
     @Override
     public void foundBTDevice(BluetoothDevice device, boolean isCorrectDevice, boolean isBonded) {
         mAdapterConnect.addItem(device);
+        ///// 发现设备，发现设备与配对设备对比
+        autoConnect(device);
+        ///////////////////
+
+
         if (isCorrectDevice && isBonded) {
             int correctDevicePosition = mAdapterConnect.getCorrectDevicePosition(device.getAddress());
             if (correctDevicePosition != -1) {
@@ -985,8 +1009,14 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             Intent intent = new Intent(this, SettingActivity.class);
             startActivity(intent);
         } else if (item.mId == ID_GALLERY) {
-            Intent intent = new Intent(this, GalleryActivity.class);
-            startActivity(intent);
+            boolean connected = mNeckbandManager.getConnectStateManage().isConnected();
+            if (connected){
+                Intent intent = new Intent(this, GalleryActivity.class);
+                startActivity(intent);
+            }else {
+                ToastUtils.showShort("设备暂未连接");
+            }
+
         } else if (mNeckbandManager.getConnectStateManage().isConnected()) {
             switch (item.mId) {
                 case ID_RECORDING:
@@ -1004,8 +1034,8 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                     break;
                 case ID_PREVIEW:
                     if (!mNeckbandManager.isRecording()) {
-                        Intent intent = new Intent(this, PreviewActivity.class);
-                        startActivity(intent);
+//                        Intent intent = new Intent(this, PreviewActivity.class);
+//                        startActivity(intent);
                     } else {
                         Toast.makeText(this, "recording...", Toast.LENGTH_SHORT).show();
                     }
