@@ -25,7 +25,8 @@ public class App extends Application {
     public static App INS;
     private static final Handler sHandler = new Handler();
 
-    public static String BaseUrl ="http://183.220.194.106:38080/cpe/";
+    public static String BaseUrl = "http://183.220.194.106:38080/cpe/";
+//    public static String BaseUrl ="http://192.168.41.64:8080/cpe/";//内网地址
 
     // Singleton pattern to get unique MyApplication instance
     public static App getInstance() {
@@ -47,28 +48,26 @@ public class App extends Application {
     }
 
 
-
-    private void testGetHeap()
-    {
-        Runtime rt=Runtime.getRuntime();
-        long maxMemory=rt.maxMemory();
-        Log.i("OneDemoApplication:"," MaxMemory " + Long.toString(maxMemory/(1024*1024)));
+    private void testGetHeap() {
+        Runtime rt = Runtime.getRuntime();
+        long maxMemory = rt.maxMemory();
+        Log.i("OneDemoApplication:", " MaxMemory " + Long.toString(maxMemory / (1024 * 1024)));
 
         ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        Log.e("OneDemoApplication:"," MemoryClass " + Long.toString(activityManager.getMemoryClass()));
-        Log.e("OneDemoApplication:", " LargeMemoryClass " +Long.toString(activityManager.getLargeMemoryClass()));
+        Log.e("OneDemoApplication:", " MemoryClass " + Long.toString(activityManager.getMemoryClass()));
+        Log.e("OneDemoApplication:", " LargeMemoryClass " + Long.toString(activityManager.getLargeMemoryClass()));
 
 
         ActivityManager.MemoryInfo info = new ActivityManager.MemoryInfo();
         activityManager.getMemoryInfo(info);
-        Log.e("OneDemoApplication","系统总内存:"+(info.totalMem / (1024*1024))+"M");
-        Log.e("OneDemoApplication","系统剩余内存:"+(info.availMem / (1024*1024))+"M");
-        Log.e("OneDemoApplication","系统是否处于低内存运行："+info.lowMemory );
-        Log.e("OneDemoApplication","系统剩余内存低于"+( info.threshold  / (1024*1024))+"M时为低内存运行");
+        Log.e("OneDemoApplication", "系统总内存:" + (info.totalMem / (1024 * 1024)) + "M");
+        Log.e("OneDemoApplication", "系统剩余内存:" + (info.availMem / (1024 * 1024)) + "M");
+        Log.e("OneDemoApplication", "系统是否处于低内存运行：" + info.lowMemory);
+        Log.e("OneDemoApplication", "系统剩余内存低于" + (info.threshold / (1024 * 1024)) + "M时为低内存运行");
     }
 
     //Initialize third-party update plugin initialization, must have
-    public void initUpdate(){
+    public void initUpdate() {
         XUpdate.get()
                 .debug(true)
                 .isWifiOnly(false)                                               //The default setting only checks version updates under wifi
@@ -80,7 +79,7 @@ public class App extends Application {
                     @Override
                     public void onFailure(UpdateError error) {
                         if (error.getCode() != CHECK_NO_NEW_VERSION) {          //Dealing with different errors
-                            Toast.makeText(getApplicationContext(),error.toString(),Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_SHORT).show();
                         }
                     }
                 })

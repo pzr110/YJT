@@ -8,7 +8,7 @@ android {
         applicationId "com.linkflow.fitt360sdk"
         minSdkVersion 23
         targetSdkVersion 29
-        versionCode 1
+        versionCode 3//调整为成研院内网地址
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -56,7 +56,7 @@ dependencies {
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
     // SDK
     implementation files('libs/LinkflowSDK_beta_0.0.3.aar')
-/////////////////////////////////////////////
+    /////////////////////////////////////////////
     // Blankj
     implementation 'com.blankj:utilcode:1.28.0'
     // 适配

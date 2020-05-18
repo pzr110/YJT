@@ -321,23 +321,8 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         boolean wifiEnabled = wifiManager.isWifiEnabled(); // WIFI状态
 
         /// 自动重连
-//        ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList();
-//        for (int i = 0; i < bondedBTList.size(); i++) {
-//
-//            if (mBTConnectHelper.isBondedDevice(bondedBTList.get(i))) {
-//                Log.e("TAGOld", "发现旧设备");
-//                BluetoothDevice bluetoothDevice = bondedBTList.get(i);
-//                mSelectedBTDevice = bluetoothDevice;
-////                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
-//                mConnector.start(null, bondedBTList.get(i));
-//                isAutoConnect = true;
-//                break;
-//            }
-//        }
         ///////////////////////////////////////////
         lm = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-
     }
 
 
@@ -372,15 +357,10 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
         mAutoConnectDialog.show();
 
+
 //        mConnectDialog.getWindow().setLayout((ScreenUtils.getScreenWidth() / 3), LinearLayout.LayoutParams.WRAP_CONTENT);
     }
 
-//    TimerTask mTimerTask = new TimerTask() {
-//        @Override
-//        public void run() {
-//            mAutoConnectDialog.dismiss();
-//        }
-//    };
 
     class MyTask extends TimerTask {
 
@@ -622,7 +602,6 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     private void openGPS() {
         boolean enable = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-
         Toast.makeText(this, "系统检测到未开启GPS定位服务", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent();
         intent.setAction(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
@@ -675,7 +654,6 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         }
 
 
-
     }
 
     private void checkAppVersion() {
@@ -684,9 +662,6 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                 .updateUrl(APPUpdateUrl)
                 .update();
     }
-
-
-
 
 
     @Override
@@ -761,7 +736,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     }
 
     private void autoConnect(BluetoothDevice device) {
-        if (mIsAllOpen){
+        if (mIsAllOpen) {
             ArrayList<BluetoothDevice> bondedBTList = mBTConnectHelper.getBondedBTList(); // 配对设备
             String foundAddress = device.getAddress(); // 发现设备地址
 
@@ -776,20 +751,32 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                     mConnector.start(null, bondedBTList.get(i));
                     isAutoConnect = true;
                     break;
-                }else {
-                    ToastUtils.showShort("未发现可用设备");
+                } else {
+                    ToastUtils.showShort("未发现可用设备AA");
                 }
             }
         }
     }
 
+    boolean isOne = true;
+
     @Override
     public void foundBTDevice(BluetoothDevice device, boolean isCorrectDevice, boolean isBonded) {
         mAdapterConnect.addItem(device);
         ///// 发现设备，发现设备与配对设备对比
-        autoConnect(device);
-        ///////////////////
+//        Handler handler = new Handler();
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+        if (isOne) {
+            autoConnect(device);
+            isOne = false;
+        }
 
+//            }
+//        }, 5000);//3秒后执行Runnable中的run方法
+
+        ///////////////////
 
         if (isCorrectDevice && isBonded) {
             int correctDevicePosition = mAdapterConnect.getCorrectDevicePosition(device.getAddress());
@@ -873,6 +860,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             case STATE_CONNECTING:
                 mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_BT);
 //                Toast.makeText(this, "连接蓝牙中", Toast.LENGTH_SHORT).show();
+
                 showAutoConnectDialog(mSelectedBTDevice.getName());
 //                if (pztCon>5){
 //                    mAutoConnectDialog
@@ -917,7 +905,6 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                 NeckbandRestApiClient.setBaseUrl(info.groupOwnerAddress.getHostAddress());
                 mNeckbandManager.connect("newwifi", "123456");
                 mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_DONE);
-
 
                 new Thread(new Runnable() {
                     @Override
@@ -1010,10 +997,10 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             startActivity(intent);
         } else if (item.mId == ID_GALLERY) {
             boolean connected = mNeckbandManager.getConnectStateManage().isConnected();
-            if (connected){
+            if (connected) {
                 Intent intent = new Intent(this, GalleryActivity.class);
                 startActivity(intent);
-            }else {
+            } else {
                 ToastUtils.showShort("设备暂未连接");
             }
 
