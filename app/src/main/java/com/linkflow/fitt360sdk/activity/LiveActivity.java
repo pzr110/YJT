@@ -593,7 +593,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
         if (success && item instanceof RecordSetItem) {
             StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_RECORD_WIDTH, 1920);
             StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_RECORD_HEIGHT, 1080);
-            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_BITRATE, 20);
+            StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_BITRATE, 5);
             StoredDataManager.getInstance().setData(this, StoredDataManager.KEY_FPS, 24);
         }
     }

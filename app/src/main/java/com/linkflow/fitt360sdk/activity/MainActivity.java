@@ -746,13 +746,14 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                     Log.e("TAGOld", "发现旧设备");
                     BluetoothDevice bluetoothDevice = bondedBTList.get(i);
                     int bondState = bluetoothDevice.getBondState();
+                    Log.e("STATEB", "bondState" + bondState);
                     mSelectedBTDevice = bluetoothDevice;
 //                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
                     mConnector.start(null, bondedBTList.get(i));
                     isAutoConnect = true;
                     break;
                 } else {
-                    ToastUtils.showShort("未发现可用设备AA");
+                    ToastUtils.showShort("未发现可用设备");
                 }
             }
         }
@@ -768,10 +769,10 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 //        handler.postDelayed(new Runnable() {
 //            @Override
 //            public void run() {
-        if (isOne) {
-            autoConnect(device);
-            isOne = false;
-        }
+//        if (isOne) {
+//            isOne = false;
+        autoConnect(device);
+//        }
 
 //            }
 //        }, 5000);//3秒后执行Runnable中的run方法
@@ -840,6 +841,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         }
     };
 
+    boolean isOneCount = true;
 
     @Override
     public void bluetoothState(ConnectManager.STATE state, ConnectManager.PARING paring) {
@@ -861,7 +863,12 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                 mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_BT);
 //                Toast.makeText(this, "连接蓝牙中", Toast.LENGTH_SHORT).show();
 
-                showAutoConnectDialog(mSelectedBTDevice.getName());
+                if (isOneCount) {
+                    Log.e("STATEB", "Count");
+                    showAutoConnectDialog(mSelectedBTDevice.getName());
+                    isOneCount = false;
+                }
+
 //                if (pztCon>5){
 //                    mAutoConnectDialog
 //                }
