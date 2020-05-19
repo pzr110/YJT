@@ -3,6 +3,9 @@ package com.linkflow.cpe.net;
 
 import com.linkflow.fitt360sdk.item.BaseBean;
 import com.linkflow.fitt360sdk.item.Device;
+import com.linkflow.fitt360sdk.item.MessageBean;
+import com.linkflow.fitt360sdk.item.MessageBeanList;
+import com.linkflow.fitt360sdk.item.MessageInfoBean;
 import com.linkflow.fitt360sdk.item.RtmpBean;
 
 import java.util.HashMap;
@@ -40,6 +43,29 @@ public interface ApiService {
     @FormUrlEncoded
     @POST("live/RtmpCheck")
     Observable<BaseBean<RtmpBean>> postRtmpUrl(@FieldMap HashMap<String, Object> params);
+
+
+    /**
+     * 消息列表列表
+     *
+     * @param params
+     * @return
+     */
+//    @GET("live/livelist")
+//    Observable<BaseBean<LiveList>> getLivelist(@QueryMap HashMap<String, Object> params);
+    @GET("message/lists")
+    Observable<BaseBean<MessageBeanList>> getMessageList(@QueryMap HashMap<String, Object> params);
+
+    /**
+     * 首页主消息
+     *
+     * @param params
+     * @return
+     */
+//    @GET("live/livelist")
+//    Observable<BaseBean<LiveList>> getLivelist(@QueryMap HashMap<String, Object> params);
+    @GET("message/index")
+    Observable<BaseBean<MessageBean>> getMessage(@QueryMap HashMap<String, Object> params);
 
 //    /**
 //     * 注册

@@ -52,7 +52,11 @@ import com.blankj.utilcode.util.BarUtils;
 import com.blankj.utilcode.util.SPUtils;
 import com.blankj.utilcode.util.ScreenUtils;
 import com.blankj.utilcode.util.ToastUtils;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.linkflow.cpe.App;
+import com.linkflow.cpe.net.Api;
+import com.linkflow.cpe.net.BaseSubscriber;
 import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.adapter.BTDeviceRecyclerAdapter;
 import com.linkflow.fitt360sdk.adapter.MainRecyclerAdapter;
@@ -60,14 +64,19 @@ import com.linkflow.fitt360sdk.dialog.RTMPStreamerDialog;
 import com.linkflow.fitt360sdk.helper.TimeUtils;
 import com.linkflow.fitt360sdk.item.BTItem;
 import com.linkflow.fitt360sdk.item.BaseBean;
+import com.linkflow.fitt360sdk.item.MessageBean;
+import com.linkflow.fitt360sdk.item.MessageBeanList;
+import com.linkflow.fitt360sdk.item.MessageInfoBean;
 import com.linkflow.fitt360sdk.item.RtmpBean;
 import com.linkflow.fitt360sdk.service.RTMPStreamService;
 import com.wang.avi.AVLoadingIndicatorView;
 import com.xuexiang.xupdate.XUpdate;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -143,6 +152,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
     private AlertDialog mDialogState;
     private boolean mIsAllOpen;
+    private boolean isAuto = true;
     //////////////////////////////
 
     class BluetoothStateBroadcastReceive extends BroadcastReceiver {
@@ -634,6 +644,8 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         super.onStart();
         Log.e("ResFITT", "StartDevice:" + mSelectedBTDevice);
 
+        checkMessage();
+
         checkAppVersion();
 
         Log.e("TAGDDG", "Asss");
@@ -654,6 +666,143 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         }
 
 
+    }
+
+    private void checkMessage() {
+        HashMap<String, Object> params = new HashMap<>();
+//        params.put("page", page + "");
+        Api.getRetrofit().getMessage(params)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new BaseSubscriber<BaseBean<MessageBean>>(this) {
+
+                    @Override
+                    public void onStart() {
+                        super.onStart();
+//                        recyclerView.refreshComplete();
+                        Log.e("TAGPZR", "onStart");
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        super.onCompleted();
+//                        recyclerView.refreshComplete();
+                        Log.e("TAGPZR", "onCompleted");
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        super.onError(e);
+//                        showRec(false);
+//                        recyclerView.refreshComplete();
+                        Log.e("TAGPZR", "onError" + e.toString() + "Err:" + e.getMessage());
+
+
+                    }
+
+                    @Override
+                    public void onNext(BaseBean<MessageBean> bean) {
+                        super.onNext(bean);
+
+
+                        String title = bean.getData().getMessage().getTitle();
+                        String content = bean.getData().getMessage().getContent();
+                        String id = bean.getData().getMessage().getId();
+
+                        String messageId = SPUtils.getInstance().getString("MessageId", "ID");
+
+                        if (!messageId.equals(id)) {
+                            showMessageDialog(id, title, content);
+                        }
+//
+                    }
+                });
+
+    }
+
+//    private void showMessageList(List<MessageInfoBean> netLists) {
+//        // 获取缓存Message ID List
+//        String data = SPUtils.getInstance().getString("listStr");
+//        Gson gson = new Gson();
+//        Type listType = new TypeToken<List<MessageInfoBean>>() {
+//        }.getType();
+//        List<MessageInfoBean> localList = new ArrayList<>();
+//        localList = gson.fromJson(data, listType);
+////
+////        Log.e("Dialog", "LocalAA" + localList.size());
+//
+////
+//        List<MessageInfoBean> showList = new ArrayList<>();
+//
+//        List<String> localIdList = new ArrayList<>();
+//
+//
+////
+//        if (localList != null) {
+//            for (int i = 0; i < localList.size(); i++) {
+//                localIdList.add(localList.get(i).getId());
+//            }
+//
+//            for (int i = 0; i < netLists.size(); i++) {
+//                String id = netLists.get(i).getId();
+//                if (!localIdList.contains(id)) {
+//                    showList.add(netLists.get(i));
+//                }
+//            }
+//        } else {
+//            showList = netLists;
+//        }
+////
+////
+//        Log.e("Dialog", "Sixze" + showList.size());
+//
+//        Gson gson1 = new Gson();
+//        String data1 = gson1.toJson(netLists);
+//        SPUtils.getInstance().put("listStr", data1);
+//
+//        if (showList.size() > 0) {
+//            showMessageDialog(showList);
+//        }
+//
+//    }
+
+    private void showMessageDialog(String id, String title, String content) {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_show_message, null, false);
+        mDialogState = new AlertDialog.Builder(this).setView(view).create();
+//        mDialogState.setCancelable(false);
+        Window window = mDialogState.getWindow();
+        //这一句消除白块
+        window.setBackgroundDrawable(new BitmapDrawable());
+
+
+        TextView mTvTitle = view.findViewById(R.id.tv_title);
+        TextView mTvContent = view.findViewById(R.id.tv_content);
+        TextView mTvAgree = view.findViewById(R.id.tv_agree);
+        mTvAgree.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mDialogState.dismiss();
+            }
+        });
+
+
+        mTvTitle.setText(title);
+        mTvContent.setText(content);
+
+        mDialogState.show();
+
+        SPUtils.getInstance().put("MessageId", id);
+
+//        dialog.getWindow().setLayout((ScreenUtils.getScreenWidth() /  3), LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        // 设置dialog的宽度
+//        WindowManager m = getWindowManager();
+//        Display d = m.getDefaultDisplay(); // 为获取屏幕宽、高
+//        WindowManager.LayoutParams params = mDialogState.getWindow().getAttributes();
+//        params.width = (int) ((d.getWidth()) * 0.3);
+//        params.height = (int) ((d.getHeight()) * 0.5);
+//        mDialogState.getWindow().setAttributes(params);
     }
 
     private void checkAppVersion() {
@@ -717,8 +866,9 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 
             mSelectedBTDevice = mAdapterConnect.getItem(position).mDevice;
             if (mBTConnectHelper.isBondedDevice(mSelectedBTDevice)) {
-
+                isAuto = false;
                 mConnector.start(null, mSelectedBTDevice);
+                showAutoConnectDialog(mSelectedBTDevice.getName());
 
             } else {
                 Toast.makeText(this, R.string.bt_pairing_request, Toast.LENGTH_SHORT).show();
@@ -749,6 +899,10 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                     Log.e("STATEB", "bondState" + bondState);
                     mSelectedBTDevice = bluetoothDevice;
 //                ToastUtils.showShort("发现" + bondedBTList.get(i).getName() + "，自动重连中。。。");
+
+                    isAuto = true;
+
+
                     mConnector.start(null, bondedBTList.get(i));
                     isAutoConnect = true;
                     break;
@@ -864,10 +1018,10 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 //                Toast.makeText(this, "连接蓝牙中", Toast.LENGTH_SHORT).show();
 
                 if (isOneCount) {
-                    Log.e("STATEB", "Count");
                     showAutoConnectDialog(mSelectedBTDevice.getName());
                     isOneCount = false;
                 }
+
 
 //                if (pztCon>5){
 //                    mAutoConnectDialog
@@ -1047,6 +1201,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                             intent.setAction(RTMPStreamService.ACTION_CANCEL_RTMP_STREAM);
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                 startForegroundService(intent);
+
                             } else {
                                 startService(intent);
                             }

@@ -30,6 +30,7 @@ import com.blankj.utilcode.util.ToastUtils;
 import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.activity.user.AboutActivity;
 import com.linkflow.fitt360sdk.activity.user.LiveSettingActivity;
+import com.linkflow.fitt360sdk.activity.user.MessageActivity;
 import com.linkflow.fitt360sdk.activity.user.UserMangerActivity;
 
 import app.library.linkflow.manager.model.TemperModel;
@@ -52,6 +53,8 @@ public class UserActivity extends BaseActivity implements View.OnClickListener {
 
     private Switch mSwitchHot;
     private Switch mSwitchGps;
+    private LinearLayout mLlMessage;
+
 
     private boolean hotChecked = false;
 
@@ -143,6 +146,10 @@ public class UserActivity extends BaseActivity implements View.OnClickListener {
         mSwitchHot = findViewById(R.id.switch_hot);
         mSwitchGps = findViewById(R.id.switch_gps);
 
+
+        mLlMessage = findViewById(R.id.ll_message);
+
+
         boolean enable = (mNeckbandManager.getSetManage().isNormalLimitEnable() || mNeckbandManager.getSetManage().isSafeLimitEnable());
         mSwitchHot.setChecked(enable);
 
@@ -158,6 +165,7 @@ public class UserActivity extends BaseActivity implements View.OnClickListener {
         mImgMainBtn.setOnClickListener(this);
         mIvAlbum.setOnClickListener(this);
         mLlAbout.setOnClickListener(this);
+        mLlMessage.setOnClickListener(this);
     }
 
     @Override
@@ -188,6 +196,10 @@ public class UserActivity extends BaseActivity implements View.OnClickListener {
             }
             case R.id.ll_about: {
                 ActivityUtils.startActivity(AboutActivity.class);
+                break;
+            }
+            case R.id.ll_message: {
+                ActivityUtils.startActivity(MessageActivity.class);
                 break;
             }
 

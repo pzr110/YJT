@@ -25,8 +25,10 @@ public class App extends Application {
     public static App INS;
     private static final Handler sHandler = new Handler();
 
-    public static String BaseUrl = "http://183.220.194.106:38080/cpe/";
+//    public static String BaseUrl = "http://183.220.194.106:38080/cpe/";
 //    public static String BaseUrl ="http://192.168.41.64:8080/cpe/";//内网地址
+//    public static String BaseUrl ="http://192.168.0.250:8000/cpe/";//内网地址
+    public static String BaseUrl ="http://192.168.0.17:8000/cpe/";//内网地址
 
     // Singleton pattern to get unique MyApplication instance
     public static App getInstance() {

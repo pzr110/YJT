@@ -93,4 +93,8 @@ dependencies {
 
     //加载效果
     implementation 'com.github.gittjy:LoadingDialog:1.0.2'
+
+
+    // BaseQuickAdapter
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.30'
 }
