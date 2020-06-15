@@ -45,7 +45,9 @@ public class TimeUtils implements Handler.Callback, Runnable {
         // 将UI线程 消息队列中的任务移除掉
         mUiHandler.removeCallbacks(this);
         // 移除消息
-        mInternalHandler.removeMessages(MSG_SEND_SIGNAL);
+        if (mInternalHandler!=null){
+            mInternalHandler.removeMessages(MSG_SEND_SIGNAL);
+        }
     }
 
     public void destroy() {

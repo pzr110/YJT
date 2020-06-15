@@ -76,6 +76,9 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     private ImageView mImgRedDot;
     private TextView mTvMine;
     private TextView mTvTime;
+    private Switch mSwitchVoice;
+
+
 
 
     private boolean isPushStream = false;
@@ -122,7 +125,9 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                 if (action.equals(ACTION_STOP_RTMP)) {
                     if (intent.getIntExtra("close", -1) == 10) {
 //                        mAdapter.changeStreamingState(false);
-                        mTimeUtils.stop();
+                        if (mTimeUtils!=null){
+                            mTimeUtils.stop();
+                        }
                         changeLiveEnable(false);
                     }
                 } else if (action.equals(ACTION_START_RTMP)) {
@@ -425,6 +430,23 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                 }
             }
         });
+
+        mSwitchVoice = findViewById(R.id.switch_voice);
+
+        mSwitchVoice.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked){
+                    ToastUtils.showShort("开始语音");
+
+
+
+                }else {
+                    ToastUtils.showShort("结束");
+                }
+            }
+        });
+
 
 
     }

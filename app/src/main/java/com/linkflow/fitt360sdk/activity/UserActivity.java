@@ -33,6 +33,9 @@ import com.linkflow.fitt360sdk.activity.user.LiveSettingActivity;
 import com.linkflow.fitt360sdk.activity.user.MessageActivity;
 import com.linkflow.fitt360sdk.activity.user.UserMangerActivity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import app.library.linkflow.manager.model.TemperModel;
 
 public class UserActivity extends BaseActivity implements View.OnClickListener {
@@ -64,6 +67,8 @@ public class UserActivity extends BaseActivity implements View.OnClickListener {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
+
+
 
         BarUtils.setStatusBarColor(this, Color.TRANSPARENT);
 

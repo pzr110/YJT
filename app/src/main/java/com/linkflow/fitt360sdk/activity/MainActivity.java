@@ -61,6 +61,7 @@ import com.linkflow.fitt360sdk.R;
 import com.linkflow.fitt360sdk.adapter.BTDeviceRecyclerAdapter;
 import com.linkflow.fitt360sdk.adapter.MainRecyclerAdapter;
 import com.linkflow.fitt360sdk.dialog.RTMPStreamerDialog;
+import com.linkflow.fitt360sdk.dialog.USBTetheringDialog;
 import com.linkflow.fitt360sdk.helper.TimeUtils;
 import com.linkflow.fitt360sdk.item.BTItem;
 import com.linkflow.fitt360sdk.item.BaseBean;
@@ -153,6 +154,9 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     private AlertDialog mDialogState;
     private boolean mIsAllOpen;
     private boolean isAuto = true;
+
+    private static final String USB_STATE_CHANGE_ACTION = "android.hardware.usb.action.USB_STATE";
+//    private USBTetheringDialog mUSBTetheringDialog;  // USB 方式关闭
     //////////////////////////////
 
     class BluetoothStateBroadcastReceive extends BroadcastReceiver {
@@ -245,8 +249,32 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     //创建WifiManager对象
     private WifiManager wifiManager;
 
-    @Override
+    private BroadcastReceiver mUsbBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action != null) {
+                if (action.equalsIgnoreCase(USB_STATE_CHANGE_ACTION)) {
+                    if (intent.getExtras().getBoolean("connected")) {
+                        if (isUSBTetheringActive()) {
+                            mNeckbandManager.enableRndis(true);
+                        } else {
+                            mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_NONE);
+//                            mUSBTetheringDialog.show(getSupportFragmentManager()); // USB 方式关闭
+//                            ToastUtils.showShort("Start");//
+                        }
+                    } else {
+                        mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_NONE);
+//                        mUSBTetheringDialog.dismissAllowingStateLoss();// USB 方式关闭
+//                        ToastUtils.showShort("Stop");
+                    }
+                }
+            }
+        }
+    };
 
+
+    @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         hideHeader();
         super.onCreate(savedInstanceState);
@@ -333,6 +361,27 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         /// 自动重连
         ///////////////////////////////////////////
         lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+
+        /** USB 方式关闭
+         mUSBTetheringDialog = new USBTetheringDialog();
+         mUSBTetheringDialog.setClickListener(new View.OnClickListener() {
+        @Override public void onClick(View v) {
+        if (v.getId() == R.id.base_dialog_agree) {
+        Intent tetherSettings = new Intent();
+        tetherSettings.setClassName("com.android.settings", "com.android.settings.TetherSettings");
+        startActivity(tetherSettings);
+        }
+        mUSBTetheringDialog.dismissAllowingStateLoss();
+        }
+        });
+
+         */
+        IntentFilter usbFilter = new IntentFilter();
+        usbFilter.addAction(USB_STATE_CHANGE_ACTION);
+        registerReceiver(mUsbBroadcastReceiver, usbFilter);
+
+        ConnectManager.getInstance(getApplicationContext()).disconnect();
     }
 
 
@@ -500,7 +549,18 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             }
         }
 
+        /** USB USB 方式关闭
+         if (isUSBTetheringActive()) {
+         if (!mNeckbandManager.getConnectStateManage().isConnected()) {
+         mNeckbandManager.enableRndis(true);
+         }
+         mUSBTetheringDialog.dismissAllowingStateLoss();
+         //            ToastUtils.showShort("Start222");
+         } else if (!ConnectManager.getInstance(this).isConnected()) {
+         mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_NONE);
+         }
 
+         */
 //        if (blueState && oPenGps && wifiEnabled) {
 //            Log.e("State", "已经全部打开");
 //            mDialogState.dismiss();
@@ -644,9 +704,11 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         super.onStart();
         Log.e("ResFITT", "StartDevice:" + mSelectedBTDevice);
 
-        checkMessage();
+//        checkMessage();
+
 
         checkAppVersion();
+
 
         Log.e("TAGDDG", "Asss");
         boolean blueState = mBluetoothAdapter.isEnabled(); // 蓝牙打开状态
@@ -822,6 +884,8 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             }
         }
 
+        unregisterReceiver(mUsbBroadcastReceiver);
+
         unregisterBluetoothReceiver();
 //        mNeckbandManager.getPreviewModel().getMuteState();
 //        if ()
@@ -925,7 +989,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
 //            public void run() {
 //        if (isOne) {
 //            isOne = false;
-        autoConnect(device);
+        autoConnect(device);  // 自动重连
 //        }
 
 //            }

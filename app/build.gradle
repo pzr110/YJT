@@ -9,9 +9,14 @@ android {
         minSdkVersion 23
         targetSdkVersion 29
         versionCode 4//调整为成研院内网地址
-        versionName "1.0"
+        versionName "1.0.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            // 设置支持的SO库架构
+            abiFilters 'armeabi' , 'x86', 'armeabi-v7a', 'x86_64', 'arm64-v8a'
+        }
     }
 
     packagingOptions {
@@ -54,8 +59,8 @@ dependencies {
     implementation 'com.googlecode.mp4parser:isoparser:1.1.22'
     implementation 'com.github.pedroSG94.metadata-spherical-injector:metadataphoto:1.0'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
-    // SDK
-    implementation files('libs/LinkflowSDK_beta_0.0.4.aar')
+    // FITTSDK
+    implementation files('libs/LinkflowSDK_beta_0.0.6.aar')
     /////////////////////////////////////////////
     // Blankj
     implementation 'com.blankj:utilcode:1.28.0'
@@ -97,4 +102,13 @@ dependencies {
 
     // BaseQuickAdapter
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.30'
+
+    implementation 'com.tencent.bugly:crashreport:latest.release' //其中latest.release指代最新Bugly SDK版本号，也可以指定明确的版本号，例如2.1.9
+    implementation 'com.tencent.bugly:nativecrashreport:latest.release' //其中latest.release指代最新Bugly NDK版本号，也可以指定明确的版本号，例如3.0
+
+//    implementation 'com.tencent.bugly:crashreport:latest.release' //其中latest.release指代最新Bugly SDK版本号，也可以指定明确的版本号，例如2.2.0
+
+
+    // 阿里语音通话
+    implementation files('libs/AliRTCSdk.aar')
 }

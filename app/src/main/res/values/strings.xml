@@ -2,6 +2,7 @@
     <string name="app_name">FITT360直播</string>
     <string name="camera">Camera</string>
 
+    <string name="go">Go</string>
     <string name="on">On</string>
     <string name="off">Off</string>
     <string name="yes">确认</string>

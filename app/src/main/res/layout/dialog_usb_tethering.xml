@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp"
+    android:textSize="15sp"
+    android:textColor="@color/black"
+    android:text="如果要使用USB共享网络，则应启用USB共享网络\n是否可以转到页面？"/>

@@ -38,7 +38,9 @@ import com.linkflow.fitt360sdk.item.Device;
 
 import com.wang.avi.AVLoadingIndicatorView;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -64,9 +66,14 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+
         initViewId();
         BarUtils.setStatusBarColor(this, Color.TRANSPARENT);
         initLogin();
+
+
+
     }
 
 
@@ -116,7 +123,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             @Override
             public void onClick(View v) {
                 mUrl = url1.getText().toString();
-                App.BaseUrl=mUrl;
+                App.BaseUrl = mUrl;
                 alertDialog.dismiss();
             }
         });
@@ -125,7 +132,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             @Override
             public void onClick(View v) {
                 mUrl = url2.getText().toString();
-                App.BaseUrl=mUrl;
+                App.BaseUrl = mUrl;
                 alertDialog.dismiss();
             }
         });
@@ -134,7 +141,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             @Override
             public void onClick(View v) {
                 mUrl = url3.getText().toString();
-                App.BaseUrl=mUrl;
+                App.BaseUrl = mUrl;
                 alertDialog.dismiss();
             }
         });
@@ -160,7 +167,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void postLogin(String account, String password) {
-        Log.e("BASEURL","URL:"+App.BaseUrl);
+        Log.e("BASEURL", "URL:" + App.BaseUrl);
 
         @SuppressLint("HardwareIds") String device_sn = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
         HashMap<String, Object> params = new HashMap<>();

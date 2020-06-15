@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.tencent.bugly.crashreport.CrashReport;
 import com.xuexiang.xupdate.XUpdate;
 import com.xuexiang.xupdate.entity.UpdateError;
 import com.xuexiang.xupdate.listener.OnUpdateFailureListener;
@@ -25,10 +26,11 @@ public class App extends Application {
     public static App INS;
     private static final Handler sHandler = new Handler();
 
+    public static String BaseUrl = "https://vr.scgcube.com:8000/cpe/";
 //    public static String BaseUrl = "http://183.220.194.106:38080/cpe/";
 //    public static String BaseUrl ="http://192.168.41.64:8080/cpe/";//内网地址
 //    public static String BaseUrl ="http://192.168.0.250:8000/cpe/";//内网地址
-    public static String BaseUrl ="http://192.168.0.17:8000/cpe/";//内网地址
+//    public static String BaseUrl ="http://192.168.0.17:8000/cpe/";//内网地址
 
     // Singleton pattern to get unique MyApplication instance
     public static App getInstance() {
@@ -41,6 +43,9 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        CrashReport.initCrashReport(getApplicationContext(), "d950e677bd", true);
+
         INS = this;
         initUpdate();
         TokenUtils.init(this);
@@ -48,6 +53,7 @@ public class App extends Application {
 //        Log.e(true, true, logPath, true);
         testGetHeap();
     }
+
 
 
     private void testGetHeap() {
