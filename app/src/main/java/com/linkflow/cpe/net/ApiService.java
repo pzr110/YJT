@@ -1,6 +1,7 @@
 package com.linkflow.cpe.net;
 
 
+import com.linkflow.cpe.bean.TokenBean;
 import com.linkflow.fitt360sdk.item.BaseBean;
 import com.linkflow.fitt360sdk.item.Device;
 import com.linkflow.fitt360sdk.item.MessageBean;
@@ -66,6 +67,16 @@ public interface ApiService {
 //    Observable<BaseBean<LiveList>> getLivelist(@QueryMap HashMap<String, Object> params);
     @GET("message/index")
     Observable<BaseBean<MessageBean>> getMessage(@QueryMap HashMap<String, Object> params);
+
+
+    /**
+     * 获取音视频Token
+     *
+     * @param params
+     * @return
+     */
+    @GET("live/getToken")
+    Observable<TokenBean> getToken(@QueryMap HashMap<String, Object> params);
 
 //    /**
 //     * 注册

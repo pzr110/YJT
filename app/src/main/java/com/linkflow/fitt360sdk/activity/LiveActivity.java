@@ -1,14 +1,18 @@
 package com.linkflow.fitt360sdk.activity;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -21,14 +25,22 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.alivc.rtc.AliRtcAuthInfo;
+import com.alivc.rtc.AliRtcEngine;
+import com.alivc.rtc.AliRtcEngineEventListener;
+import com.alivc.rtc.AliRtcEngineNotify;
 import com.blankj.utilcode.util.ActivityUtils;
 import com.blankj.utilcode.util.BarUtils;
 import com.blankj.utilcode.util.SPUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.linkflow.cpe.App;
+import com.linkflow.cpe.bean.TokenBean;
 import com.linkflow.cpe.net.Api;
 import com.linkflow.cpe.net.BaseSubscriber;
 import com.linkflow.fitt360sdk.R;
@@ -59,6 +71,10 @@ import app.library.linkflow.rtmp.RTSPToRTMPConverter;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
+import static com.xuexiang.xupdate.XUpdate.getContext;
+import static org.webrtc.alirtcInterface.ErrorCodeEnum.ERR_ICE_CONNECTION_HEARTBEAT_TIMEOUT;
+import static org.webrtc.alirtcInterface.ErrorCodeEnum.ERR_SESSION_REMOVED;
+
 public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Listener,
         SetManage.Listener, SettingListener {
     private TextView mTvPush;
@@ -77,8 +93,6 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     private TextView mTvMine;
     private TextView mTvTime;
     private Switch mSwitchVoice;
-
-
 
 
     private boolean isPushStream = false;
@@ -116,6 +130,18 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     private boolean isAutoBit = false;
     private String mStream_url;
 
+    private static final String[] REQUESTED_PERMISSIONS = {
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.CAMERA,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
+
+    private static final int PERMISSION_REQ_ID = 0x0002;
+
+    /**
+     * SDK提供的对音视频通话处理的引擎类
+     */
+    private AliRtcEngine mAliRtcEngine;
 
     private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -125,7 +151,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                 if (action.equals(ACTION_STOP_RTMP)) {
                     if (intent.getIntExtra("close", -1) == 10) {
 //                        mAdapter.changeStreamingState(false);
-                        if (mTimeUtils!=null){
+                        if (mTimeUtils != null) {
                             mTimeUtils.stop();
                         }
                         changeLiveEnable(false);
@@ -176,7 +202,7 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     }
 
     private void getRtmpUrl() {
-        Log.e("TAGGYURL","URL:"+ App.BaseUrl);
+        Log.e("TAGGYURL", "URL:" + App.BaseUrl);
         HashMap<String, Object> params = new HashMap<>();
         Api.getRetrofit().postRtmpUrl(params)
                 .subscribeOn(Schedulers.io())
@@ -277,6 +303,10 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        if (mAliRtcEngine != null) {
+            mAliRtcEngine.destroy();
+        }
 
         if (isTimer) {
             mTimeUtils.stop();
@@ -436,20 +466,307 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
         mSwitchVoice.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked){
+                if (isChecked) {
                     ToastUtils.showShort("开始语音");
 
+                    if (checkSelfPermission(REQUESTED_PERMISSIONS[0], PERMISSION_REQ_ID) &&
+                            checkSelfPermission(REQUESTED_PERMISSIONS[1], PERMISSION_REQ_ID) &&
+                            checkSelfPermission(REQUESTED_PERMISSIONS[2], PERMISSION_REQ_ID)) {
+                        // 初始化引擎
+                        initRTCEngine();
+                    }
 
-
-                }else {
+                } else {
                     ToastUtils.showShort("结束");
+                    if (mAliRtcEngine != null) {
+                        mAliRtcEngine.destroy();
+                        mAliRtcEngine = null;
+                    }
                 }
             }
         });
 
+    }
 
+    private void getVoiceToken() {
+
+        @SuppressLint("HardwareIds") String device_sn = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+
+        Log.e("TAGPZR", "device_sn"+device_sn);
+
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("device_id", device_sn);
+//        params.put("type", "publisher");
+        Api.getRetrofit().getToken(params)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new BaseSubscriber<TokenBean>(this) {
+
+                    @Override
+                    public void onStart() {
+                        super.onStart();
+//                        recyclerView.refreshComplete();
+                        Log.e("TAGPZR", "onStart");
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        super.onCompleted();
+//                        recyclerView.refreshComplete();
+                        Log.e("TAGPZR", "onCompleted");
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        super.onError(e);
+//                        showRec(false);
+//                        recyclerView.refreshComplete();
+                        Log.e("TAGPZR", "onError" + e.toString());
+
+                    }
+
+                    @Override
+                    public void onNext(TokenBean bean) {
+                        super.onNext(bean);
+
+
+                        String appid = bean.getData().getAppid();
+                        String nonce = bean.getData().getNonce();
+                        String gslb = bean.getData().getGslb().get(0).toString();
+                        int timestamp = bean.getData().getTimestamp();
+                        String token = bean.getData().getToken();
+                        String channel = bean.getData().getChannel();
+                        String userid = bean.getData().getUserid();
+
+//                        ToastUtils.showLong(channel);
+
+                        joinChannel(appid, nonce, gslb, timestamp, token, channel, userid);
+                    }
+                });
 
     }
+
+    private void joinChannel(String appid, String nonce, String gslb, int timestamp, String token, String channel, String userid) {
+        if (mAliRtcEngine == null) {
+            return;
+        }
+        //从控制台生成的鉴权信息，具体内容请查阅:https://help.aliyun.com/document_detail/146833.html
+        AliRtcAuthInfo userInfo = new AliRtcAuthInfo();
+        userInfo.setAppid(appid);
+        userInfo.setNonce(nonce);
+        userInfo.setGslb(new String[]{gslb});
+        userInfo.setTimestamp(timestamp);
+        userInfo.setToken(token);
+        userInfo.setConferenceId(channel);///
+        userInfo.setUserId(userid);
+        /*
+         *设置自动发布和订阅，只能在joinChannel之前设置
+         *参数1    true表示自动发布；false表示手动发布
+         *参数2    true表示自动订阅；false表示手动订阅
+         */
+        mAliRtcEngine.setAutoPublishSubscribe(true, true);
+        mAliRtcEngine.setAudioOnlyMode(true);// 纯音频
+        // 加入频道，参数1:鉴权信息 参数2:用户名
+        mAliRtcEngine.joinChannel(userInfo, userid);/// 用户名设置
+
+    }
+
+
+    private void initRTCEngine() {
+        //默认不开启兼容H5
+        AliRtcEngine.setH5CompatibleMode(0);
+        // 防止初始化过多
+        if (mAliRtcEngine == null) {
+            //实例化,必须在主线程进行。
+            mAliRtcEngine = AliRtcEngine.getInstance(getApplicationContext());
+            //设置事件的回调监听
+            mAliRtcEngine.setRtcEngineEventListener(mEventListener);
+            //设置接受通知事件的回调
+            mAliRtcEngine.setRtcEngineNotify(mEngineNotify);
+            // 初始化本地视图
+//            initLocalView();
+            //开启预览
+//            startPreview();
+
+            //加入频道
+            getVoiceToken();
+
+
+        }
+    }
+
+    /**
+     * 用户操作回调监听(回调接口都在子线程)
+     */
+    private AliRtcEngineEventListener mEventListener = new AliRtcEngineEventListener() {
+
+        /**
+         * 加入房间的回调
+         * @param result 结果码
+         */
+        @Override
+        public void onJoinChannelResult(int result) {
+            runOnUiThread(() -> {
+                if (result == 0) {
+                    showToast("加入频道成功");
+                } else {
+                    showToast("加入频道失败 错误码: " + result);
+                }
+            });
+        }
+
+        /**
+         * 订阅成功的回调
+         * @param s userid
+         * @param i 结果码
+         * @param aliRtcVideoTrack 视频的track
+         * @param aliRtcAudioTrack 音频的track
+         */
+        @Override
+        public void onSubscribeResult(String s, int i, AliRtcEngine.AliRtcVideoTrack aliRtcVideoTrack,
+                                      AliRtcEngine.AliRtcAudioTrack aliRtcAudioTrack) {
+            if (i == 0) {
+//                updateRemoteDisplay(s, aliRtcAudioTrack, aliRtcVideoTrack);
+            }
+        }
+
+
+        /**
+         * 取消的回调
+         * @param i 结果码
+         * @param s userid
+         */
+        @Override
+        public void onUnsubscribeResult(int i, String s) {
+//            updateRemoteDisplay(s, AliRtcAudioTrackNo, AliRtcVideoTrackNo);
+        }
+
+        /**
+         * 出现错误的回调
+         * @param error 错误码
+         */
+        @Override
+        public void onOccurError(int error) {
+            //错误处理
+            processOccurError(error);
+        }
+    };
+
+    /**
+     * 特殊错误码回调的处理方法
+     *
+     * @param error 错误码
+     */
+    private void processOccurError(int error) {
+        switch (error) {
+            case ERR_ICE_CONNECTION_HEARTBEAT_TIMEOUT:
+            case ERR_SESSION_REMOVED:
+                noSessionExit(error);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * 错误处理
+     *
+     * @param error 错误码
+     */
+    private void noSessionExit(int error) {
+        runOnUiThread(() -> new AlertDialog.Builder(LiveActivity.this)
+                .setTitle("ErrorCode : " + error)
+                .setMessage("发生错误，请退出房间")
+                .setPositiveButton("确定", (dialog, which) -> {
+                    dialog.dismiss();
+                    onBackPressed();
+                })
+                .create()
+                .show());
+    }
+
+    /**
+     * SDK事件通知(回调接口都在子线程)
+     */
+    private AliRtcEngineNotify mEngineNotify = new AliRtcEngineNotify() {
+        /**
+         * 远端用户停止发布通知，处于OB（observer）状态
+         * @param aliRtcEngine 核心引擎对象
+         * @param s userid
+         */
+        @Override
+        public void onRemoteUserUnPublish(AliRtcEngine aliRtcEngine, String s) {
+//            updateRemoteDisplay(s, AliRtcAudioTrackNo, AliRtcVideoTrackNo);
+        }
+
+        /**
+         * 远端用户上线通知
+         * @param s userid
+         */
+        @Override
+        public void onRemoteUserOnLineNotify(String s) {
+//            addRemoteUser(s);
+        }
+
+        /**
+         * 远端用户下线通知
+         * @param s userid
+         */
+        @Override
+        public void onRemoteUserOffLineNotify(String s) {
+//            removeRemoteUser(s);
+        }
+
+        /**
+         * 远端用户发布音视频流变化通知
+         * @param s userid
+         * @param aliRtcAudioTrack 音频流
+         * @param aliRtcVideoTrack 相机流
+         */
+        @Override
+        public void onRemoteTrackAvailableNotify(String s, AliRtcEngine.AliRtcAudioTrack aliRtcAudioTrack,
+                                                 AliRtcEngine.AliRtcVideoTrack aliRtcVideoTrack) {
+//            updateRemoteDisplay(s, aliRtcAudioTrack, aliRtcVideoTrack);
+        }
+    };
+
+
+    private boolean checkSelfPermission(String permission, int requestCode) {
+        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, REQUESTED_PERMISSIONS, requestCode);
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        if (requestCode == PERMISSION_REQ_ID) {
+            if (grantResults[0] != PackageManager.PERMISSION_GRANTED ||
+                    grantResults[1] != PackageManager.PERMISSION_GRANTED ||
+                    grantResults[2] != PackageManager.PERMISSION_GRANTED) {
+                showToast("Need permissions " + Manifest.permission.RECORD_AUDIO +
+                        "/" + Manifest.permission.CAMERA + "/" + Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                finish();
+                return;
+            }
+            initRTCEngine();
+        }
+    }
+
+    private void showToast(final String msg) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
 
     private void startStream() {
         listenerEnable = false;
@@ -559,19 +876,19 @@ public class LiveActivity extends BaseActivity implements RTSPToRTMPConverter.Li
                 ActivityUtils.startActivity(UserActivity.class);
 
             }
-            case R.id.base_dialog_agree:{
+            case R.id.base_dialog_agree: {
                 mNeckbandManager.getNotifyManage().getNotifyModel().agreementTemperLimit(mNeckbandManager.getAccessToken(), true, this);
-                Log.e("TAGAgree","Agree");
+                Log.e("TAGAgree", "Agree");
                 break;
             }
-            case R.id.base_dialog_disagree:{
+            case R.id.base_dialog_disagree: {
                 mTemperLimitAlertDialog.dismiss();
                 if (mNeckbandManager.isRecording()) {
                     mNeckbandManager.getRecordModel().actionRecord(mNeckbandManager.getAccessToken(), false);
                     mNeckbandManager.setRecordState(false);
                 }
                 mTemperLimitAlertDialog.dismiss();
-                Log.e("TAGAgree","disAgree");
+                Log.e("TAGAgree", "disAgree");
 
                 break;
             }
