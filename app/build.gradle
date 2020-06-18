@@ -60,7 +60,7 @@ dependencies {
     implementation 'com.github.pedroSG94.metadata-spherical-injector:metadataphoto:1.0'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
     // FITTSDK
-    implementation files('libs/LinkflowSDK_beta_0.0.6.aar')
+    implementation files('libs/LinkflowSDK_beta_0.0.7.aar')
     /////////////////////////////////////////////
     // Blankj
     implementation 'com.blankj:utilcode:1.28.0'
@@ -110,5 +110,8 @@ dependencies {
 
 
     // 阿里语音通话
-    implementation files('libs/AliRTCSdk.aar')
+//    implementation files('libs/AliRTCSdk.aar')
+
+    // Tencent RTC
+    implementation 'com.tencent.liteav:LiteAVSDK_TRTC:7.3.9139'
 }

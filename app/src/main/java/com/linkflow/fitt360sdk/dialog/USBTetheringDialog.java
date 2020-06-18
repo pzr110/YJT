@@ -18,7 +18,7 @@ public class USBTetheringDialog extends BaseDialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        setAgreeText(R.string.go);
-        setDisagreeText(R.string.close);
+        setAgreeText(R.string.yes);
+        setDisagreeText(R.string.no);
     }
 }

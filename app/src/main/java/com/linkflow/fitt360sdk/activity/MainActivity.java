@@ -156,7 +156,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     private boolean isAuto = true;
 
     private static final String USB_STATE_CHANGE_ACTION = "android.hardware.usb.action.USB_STATE";
-//    private USBTetheringDialog mUSBTetheringDialog;  // USB 方式关闭
+    private USBTetheringDialog mUSBTetheringDialog;  // USB 方式关闭
     //////////////////////////////
 
     class BluetoothStateBroadcastReceive extends BroadcastReceiver {
@@ -260,13 +260,13 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
                             mNeckbandManager.enableRndis(true);
                         } else {
                             mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_NONE);
-//                            mUSBTetheringDialog.show(getSupportFragmentManager()); // USB 方式关闭
-//                            ToastUtils.showShort("Start");//
+                            mUSBTetheringDialog.show(getSupportFragmentManager()); // USB 方式
+//                            ToastUtils.showShort("开始连接");//
                         }
                     } else {
                         mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_NONE);
-//                        mUSBTetheringDialog.dismissAllowingStateLoss();// USB 方式关闭
-//                        ToastUtils.showShort("Stop");
+                        mUSBTetheringDialog.dismissAllowingStateLoss();// USB 方式
+//                        ToastUtils.showShort("断开连接");
                     }
                 }
             }
@@ -363,20 +363,20 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
         lm = (LocationManager) getSystemService(LOCATION_SERVICE);
 
 
-        /** USB 方式关闭
-         mUSBTetheringDialog = new USBTetheringDialog();
-         mUSBTetheringDialog.setClickListener(new View.OnClickListener() {
-        @Override public void onClick(View v) {
-        if (v.getId() == R.id.base_dialog_agree) {
-        Intent tetherSettings = new Intent();
-        tetherSettings.setClassName("com.android.settings", "com.android.settings.TetherSettings");
-        startActivity(tetherSettings);
-        }
-        mUSBTetheringDialog.dismissAllowingStateLoss();
-        }
+        // USB 方式关闭
+        mUSBTetheringDialog = new USBTetheringDialog();
+        mUSBTetheringDialog.setClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (v.getId() == R.id.base_dialog_agree) {
+                    Intent tetherSettings = new Intent();
+                    tetherSettings.setClassName("com.android.settings", "com.android.settings.TetherSettings");
+                    startActivity(tetherSettings);
+                }
+                mUSBTetheringDialog.dismissAllowingStateLoss();
+            }
         });
 
-         */
         IntentFilter usbFilter = new IntentFilter();
         usbFilter.addAction(USB_STATE_CHANGE_ACTION);
         registerReceiver(mUsbBroadcastReceiver, usbFilter);
@@ -549,7 +549,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
             }
         }
 
-        /** USB USB 方式关闭
+        // USB USB 方式关闭
          if (isUSBTetheringActive()) {
          if (!mNeckbandManager.getConnectStateManage().isConnected()) {
          mNeckbandManager.enableRndis(true);
@@ -560,7 +560,7 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
          mNeckbandManager.getConnectStateManage().setState(ConnectStateManage.STATE.STATE_NONE);
          }
 
-         */
+
 //        if (blueState && oPenGps && wifiEnabled) {
 //            Log.e("State", "已经全部打开");
 //            mDialogState.dismiss();
@@ -1292,5 +1292,27 @@ public class MainActivity extends BaseActivity implements MainRecyclerAdapter.It
     @Override
     public void completedTakePhoto(boolean success, String filename) {
 
+    }
+
+    @Override
+    public void connectedRndis(String rndisIp) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, "USB连接成功", Toast.LENGTH_SHORT).show();
+            }
+        });
+        Log.e("main", "connected rndis");
+        NeckbandRestApiClient.setBaseUrl(rndisIp);
+        mNeckbandManager.connect("newwifi", "123456");
+    }
+
+    @Override
+    public void onConnectState(ConnectStateManage.STATE state) {
+        super.onConnectState(state);
+        Log.e("main", "on connect state - " + state);
+        if (state == ConnectStateManage.STATE.STATE_DONE) {
+//            mAdapter.changeTemperatureState(mNeckbandManager.getSetManage().isNormalLimitEnable() || mNeckbandManager.getSetManage().isSafeLimitEnable());
+        }
     }
 }
